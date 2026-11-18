@@ -3333,3 +3333,54 @@ a.chip.active {
     grid-row: 1;
   }
 }
+
+/* ============================================================
+   Background reviews and automatic Lichess import
+   ============================================================ */
+
+.review-status-bar {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  font-size: 0.9rem;
+}
+
+.review-status-bar .batch-review p {
+  margin-bottom: 6px;
+}
+
+.auto-import {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.auto-import .import-status {
+  margin: 0 0 6px;
+}
+
+.auto-status {
+  margin: 4px 0 0;
+}
+
+.auto-status .link-button {
+  min-height: 0;
+  padding: 0;
+  font-size: inherit;
+  color: var(--accent);
+}
+
+.new-games-banner a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.new-games-banner .icon-button {
+  flex: none;
+}

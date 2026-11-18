@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { routeHref } from '../../app/route'
 import { CATEGORY_THEMES, recommendedThemes, THEME_LABEL } from '../../puzzles/themes'
 import { progressStats } from '../../progress/stats'
@@ -12,7 +12,7 @@ import { mistakeStats } from '../../puzzles/mistakes'
 import { drillStats } from '../../openings/drill'
 import { useOpeningDrills } from '../../storage/openingStore'
 import { AccuracyChart } from './AccuracyChart'
-import { BatchReviewer } from './BatchReviewer'
+import { queueReviews, useReviewQueue } from '../../review/reviewQueue'
 
 type Filter = 'all' | 'bot' | 'lichess'
 
@@ -36,8 +36,7 @@ export function ProgressScreen() {
   const drills = useOpeningDrills()
   const openingInfo = drills ? drillStats(drills, now) : null
   const [filter, setFilter] = useState<Filter>('all')
-  const [batch, setBatch] = useState<string[] | null>(null)
-  const finishBatch = useCallback(() => setBatch(null), [])
+  const queued = useReviewQueue()
 
   const filtered = useMemo(() => (games ?? []).filter((g) => filter === 'all' || g.source === filter), [games, filter])
   const stats = useMemo(() => progressStats(filtered), [filtered])
@@ -101,23 +100,18 @@ export function ProgressScreen() {
         </div>
       </div>
 
-      {unreviewed.length > 0 && (
+      {/* While they are queued, the status bar at the top shows the reviews. */}
+      {unreviewed.length > 0 && !unreviewed.some((g) => queued.includes(g.id)) && (
         <section className="card unreviewed">
-          {batch ? (
-            <BatchReviewer ids={batch} onFinished={finishBatch} />
-          ) : (
-            <>
-              <p>
-                <strong>
-                  {unreviewed.length} game{unreviewed.length === 1 ? ' is' : 's are'} not reviewed yet
-                </strong>{' '}
-                <span className="muted">and not counted below.</span>
-              </p>
-              <button type="button" className="primary" onClick={() => setBatch(unreviewed.map((g) => g.id))}>
-                Review {unreviewed.length === 1 ? 'it' : 'them'} now
-              </button>
-            </>
-          )}
+          <p>
+            <strong>
+              {unreviewed.length} game{unreviewed.length === 1 ? ' is' : 's are'} not reviewed yet
+            </strong>{' '}
+            <span className="muted">and not counted below.</span>
+          </p>
+          <button type="button" className="primary" onClick={() => queueReviews(unreviewed.map((g) => g.id))}>
+            Review {unreviewed.length === 1 ? 'it' : 'them'} now
+          </button>
         </section>
       )}
 

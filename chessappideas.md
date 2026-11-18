@@ -2,16 +2,13 @@
 
 By Liam Daly. A list of possible improvements, roughly in the order I'd consider them. Effort is a rough guide: small (an afternoon), medium (a day or two), large (several days).
 
-Done so far: human-like Maia-3 bots, installable app, puzzles from your own mistakes (with spaced repetition), backup to Files / iCloud Drive and the opening trainer.
+Done so far: human-like Maia-3 bots, installable app, puzzles from your own mistakes (with spaced repetition), backup to Files / iCloud Drive, the opening trainer and automatic Lichess import (with background reviews).
 
 ## Accounts and saving progress
 
 **Accounts and sync between devices** (medium)
 Use Supabase (free tier): sign in with a magic link sent by email, and games, reviews and puzzle history sync between phone and laptop. The app stays offline-first: everything is saved locally as now and synced in the background when online.
 Trade-offs: changes the original "no accounts or cloud database" rule; needs a Supabase project and its public key in the app (safe with row-level security); personal data then lives on a third-party server.
-
-**Automatic Lichess import** (small)
-Remember the Lichess username and fetch new finished games each time the app opens. Optionally review them in the background.
 
 ## Training
 

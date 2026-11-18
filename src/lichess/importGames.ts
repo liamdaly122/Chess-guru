@@ -94,18 +94,22 @@ export class LichessError extends Error {}
 /**
  * Download a user's most recent finished games. Lichess sends one JSON object per line.
  * Lichess asks API users to make one request at a time and to wait a minute after a 429.
+ * `since` (ms) only asks for games started after that time. `newestCreatedAt` is the start
+ * time of the newest game Lichess sent, imported or not.
  */
 export async function fetchLichessGames(
   username: string,
   max: number,
   fetchImpl: typeof fetch = fetch,
   signal?: AbortSignal,
-): Promise<{ games: GameRecord[]; skipped: number }> {
+  since?: number,
+): Promise<{ games: GameRecord[]; skipped: number; newestCreatedAt: number | null }> {
   const name = username.trim()
   if (!USERNAME_PATTERN.test(name)) throw new LichessError('That doesn’t look like a Lichess username.')
   const url =
     `https://lichess.org/api/games/user/${encodeURIComponent(name)}` +
-    `?max=${max}&moves=true&opening=true&ongoing=false&finished=true`
+    `?max=${max}&moves=true&opening=true&ongoing=false&finished=true` +
+    (since !== undefined ? `&since=${Math.max(0, Math.floor(since))}` : '')
 
   let res: Response
   try {
@@ -120,6 +124,7 @@ export async function fetchLichessGames(
   const text = await res.text()
   const games: GameRecord[] = []
   let skipped = 0
+  let newestCreatedAt: number | null = null
   for (const line of text.split('\n')) {
     if (!line.trim()) continue
     let json: LichessGameJson
@@ -129,9 +134,10 @@ export async function fetchLichessGames(
       skipped++
       continue
     }
+    if (typeof json.createdAt === 'number') newestCreatedAt = Math.max(newestCreatedAt ?? 0, json.createdAt)
     const g = parseLichessGame(json, name)
     if (g) games.push(g)
     else skipped++
   }
-  return { games, skipped }
+  return { games, skipped, newestCreatedAt }
 }

@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { routeHref } from '../../app/route'
-import { fetchLichessGames, LichessError } from '../../lichess/importGames'
+import { checkForNewGames, queueUnreviewed, updateSync, useLichessSync, type LichessSync } from '../../lichess/autoSync'
+import { fetchLichessGames, LichessError, USERNAME_PATTERN } from '../../lichess/importGames'
+import { LICHESS_SYNC } from '../../config/lichess'
+import { Switch } from '../../ui/Switch'
 import { backUpToFile, downloadText, exportAllPgn, getLastBackupAt, importBackup } from '../../storage/backup'
 import { puzzlesChanged } from '../../storage/puzzleStore'
 import { saveGames } from '../../storage/games'
@@ -186,10 +189,99 @@ function LichessImport() {
           {state.text}
         </p>
       )}
+      <AutoImport username={username} />
       <p className="muted small">
         Only finished games are imported, for review afterwards. Chess Guru never helps during a live game.
       </p>
     </section>
+  )
+}
+
+/** "just now", "5 minutes ago", "3 hours ago", "2 days ago" */
+function agoText(at: number, now: number): string {
+  const min = Math.floor((now - at) / 60000)
+  if (min < 1) return 'just now'
+  if (min < 60) return `${min} minute${min === 1 ? '' : 's'} ago`
+  const h = Math.floor(min / 60)
+  if (h < 24) return `${h} hour${h === 1 ? '' : 's'} ago`
+  const d = Math.floor(h / 24)
+  return `${d} day${d === 1 ? '' : 's'} ago`
+}
+
+function statusText(s: LichessSync, now: number): string {
+  if (!s.lastCheckAt) return 'Not checked yet.'
+  const when = `Last checked ${agoText(s.lastCheckAt, now)}`
+  if (s.lastError) return `${when}: ${s.lastError}`
+  return `${when}: ${s.lastAdded ? `${s.lastAdded} new game${s.lastAdded === 1 ? '' : 's'}` : 'no new games'}.`
+}
+
+/** Switches for the automatic import and review, with the last check's result. */
+function AutoImport({ username }: { username: string }) {
+  const sync = useLichessSync()
+  const [busy, setBusy] = useState(false)
+  const [now, setNow] = useState(() => Date.now())
+  const [problem, setProblem] = useState<string | null>(null)
+  if (sync === undefined) return null
+  const on = !!sync?.auto
+
+  async function checkNow() {
+    setBusy(true)
+    await checkForNewGames({ force: true })
+    setNow(Date.now())
+    setBusy(false)
+  }
+
+  async function toggleAuto(checked: boolean) {
+    setProblem(null)
+    if (!checked) {
+      await updateSync({ auto: false, autoReview: false })
+      return
+    }
+    const name = username.trim() || sync?.username || ''
+    if (!USERNAME_PATTERN.test(name)) {
+      setProblem('Enter your Lichess username above first.')
+      return
+    }
+    await updateSync({ username: name, auto: true })
+    await checkNow()
+  }
+
+  return (
+    <div className="auto-import" data-testid="auto-import">
+      <Switch
+        label="Check for new games automatically"
+        description={
+          on
+            ? `New finished games for ${sync?.username} are imported when you open Chess Guru (at most every ${LICHESS_SYNC.minMinutesBetweenChecks} minutes).`
+            : 'Remember your username and import new finished games each time you open Chess Guru.'
+        }
+        checked={on}
+        onChange={(c) => void toggleAuto(c)}
+      />
+      {problem && <p className="import-status error">{problem}</p>}
+      {on && sync && (
+        <>
+          <Switch
+            label="Review them automatically"
+            description={`Unreviewed Lichess games are reviewed while you use the app, newest first (up to ${LICHESS_SYNC.maxAutoReviews} at a time). Reviews pause while you play or look at a review.`}
+            checked={sync.autoReview}
+            onChange={(c) => {
+              void updateSync({ autoReview: c }).then(() => {
+                if (c) void queueUnreviewed()
+              })
+            }}
+          />
+          <p className="muted small auto-status" data-testid="auto-status">
+            {busy ? 'Checking Lichess…' : statusText(sync, now)}{' '}
+            {!busy && (
+              <button type="button" className="link-button" onClick={() => void checkNow()}>
+                Check now
+              </button>
+            )}
+          </p>
+        </>
+      )}
+    </div>
   )
 }
 

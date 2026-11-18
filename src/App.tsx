@@ -6,6 +6,9 @@ import { PuzzlesScreen } from './features/puzzles/PuzzlesScreen'
 import { ReviewScreen } from './features/review/ReviewScreen'
 import { BoardIcon, ChartIcon, ListIcon, TargetIcon } from './ui/icons'
 import { UpdateBanner } from './features/settings/UpdateBanner'
+import { NewGamesBanner } from './features/games/NewGamesBanner'
+import { BackgroundReviewer } from './features/review/BackgroundReviewer'
+import { useAutoLichessCheck } from './lichess/autoSync'
 
 const TABS: { route: Route; label: string; icon: typeof BoardIcon }[] = [
   { route: { name: 'play' }, label: 'Play', icon: BoardIcon },
@@ -16,6 +19,7 @@ const TABS: { route: Route; label: string; icon: typeof BoardIcon }[] = [
 
 export default function App() {
   const route = useRoute()
+  useAutoLichessCheck()
   const tab = route.name === 'review' ? 'games' : route.name
 
   return (
@@ -41,6 +45,9 @@ export default function App() {
       </header>
       <UpdateBanner />
       <main>
+        {route.name !== 'play' && <NewGamesBanner onGamesPage={route.name === 'games'} />}
+        {/* Paused during a game and on the review screen, which use the engine themselves. */}
+        <BackgroundReviewer paused={route.name === 'play' || route.name === 'review'} />
         {/* The play screen stays mounted so a game in progress survives visiting other pages. */}
         <div hidden={route.name !== 'play'}>
           <PlayScreen />

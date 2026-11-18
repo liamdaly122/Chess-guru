@@ -30,7 +30,7 @@ async function tour(name, ctxOpts, browser) {
   await page.locator('.import-status').waitFor();
   await page.goto(BASE + '#/progress');
   await page.getByRole('button', { name: /Review them now/ }).click();
-  await page.waitForFunction(() => !document.querySelector('.unreviewed'), null, { timeout: 180000 });
+  await page.waitForFunction(() => !document.querySelector('.unreviewed') && !document.querySelector('.review-status-bar'), null, { timeout: 180000 });
   // Play screen mid-game
   await page.goto(BASE + '#/');
   await waitStatus(page, 'Your move');

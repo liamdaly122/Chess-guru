@@ -16,6 +16,9 @@ export function BatchReviewer({ ids, onFinished }: { ids: string[]; onFinished: 
     if (index >= ids.length) onFinished()
   }, [index, ids.length, onFinished])
 
+  // A game deleted while it waited: move on (state adjusted during render, React's pattern for this).
+  if (id && game === null) setIndex(index + 1)
+
   if (!id) return null
   return (
     <div className="batch-review" data-testid="batch-review">
