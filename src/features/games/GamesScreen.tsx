@@ -11,6 +11,7 @@ import { formatDate, OUTCOME_WORD, opponentOf, outcomeOf, ratingCounts } from '.
 import type { GameRecord } from '../../storage/types'
 import { useGames } from '../../storage/useGames'
 import { CpuIcon } from '../../ui/icons'
+import { groupGames, type GameGroup } from './gameGroups'
 import { RatingBadge } from '../play/RatingBadge'
 
 type Filter = 'all' | 'bot' | 'lichess'
@@ -56,11 +57,11 @@ export function GamesScreen() {
             </a>
           </div>
         ) : (
-          <ul className="game-list" data-testid="game-list">
-            {shown.map((g) => (
-              <GameRow key={g.id} game={g} />
+          <div className="game-groups" data-testid="game-list">
+            {groupGames(shown).map((group, i) => (
+              <GameGroupSection key={`${filter}:${group.label}`} group={group} startOpen={i === 0} />
             ))}
-          </ul>
+          </div>
         )}
       </div>
 
@@ -69,6 +70,41 @@ export function GamesScreen() {
         <BackupCard gameCount={games?.length ?? 0} />
       </aside>
     </div>
+  )
+}
+
+const GROUP_PAGE = 10
+
+/** One collapsible group of games, showing 10 at a time. */
+function GameGroupSection({ group, startOpen }: { group: GameGroup; startOpen: boolean }) {
+  const [limit, setLimit] = useState(GROUP_PAGE)
+  const record = [
+    group.won ? `${group.won} won` : '',
+    group.lost ? `${group.lost} lost` : '',
+    group.drawn ? `${group.drawn} drawn` : '',
+  ]
+    .filter(Boolean)
+    .join(', ')
+  return (
+    <details className="game-group" open={startOpen}>
+      <summary>
+        <span className="game-group-label">{group.label}</span>
+        <span className="muted small">
+          {group.games.length} game{group.games.length === 1 ? '' : 's'}
+          {record ? ` · ${record}` : ''}
+        </span>
+      </summary>
+      <ul className="game-list">
+        {group.games.slice(0, limit).map((g) => (
+          <GameRow key={g.id} game={g} />
+        ))}
+      </ul>
+      {group.games.length > limit && (
+        <button type="button" className="link-button show-more" onClick={() => setLimit((l) => l + GROUP_PAGE)}>
+          Show {Math.min(GROUP_PAGE, group.games.length - limit)} more
+        </button>
+      )}
+    </details>
   )
 }
 

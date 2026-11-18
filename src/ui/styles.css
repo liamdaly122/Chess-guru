@@ -3606,3 +3606,123 @@ a.chip.active {
   color: var(--r-mistake);
   flex: none;
 }
+
+/* ============================================================
+   Mistakes grouped by pattern
+   ============================================================ */
+
+.mistakes-home {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 760px;
+}
+
+.today-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.today-card p {
+  margin: 0;
+}
+
+.button-link.wide {
+  width: 100%;
+}
+
+.pattern-row .solve-button {
+  flex: none;
+  min-height: 40px;
+  padding: 6px 14px;
+  font-size: 0.9rem;
+}
+
+.pattern-chip {
+  align-self: flex-start;
+  margin: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.session-done {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 560px;
+}
+
+.session-done p {
+  margin: 0;
+}
+
+.session-score {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.main-mistake {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.main-mistake a {
+  font-weight: 700;
+}
+
+/* ---------- Games list groups ---------- */
+
+.game-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.game-group > summary {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 4px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.game-group > summary::-webkit-details-marker {
+  display: none;
+}
+
+.game-group > summary::before {
+  content: '';
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: translateY(-2px) rotate(-45deg);
+  transition: transform 0.15s ease;
+}
+
+.game-group[open] > summary::before {
+  transform: translateY(-4px) rotate(45deg);
+}
+
+.game-group-label {
+  font-weight: 800;
+}
+
+.game-group .show-more {
+  margin: 8px 4px 0;
+  min-height: 0;
+  padding: 4px 0;
+  color: var(--accent);
+}

@@ -21,8 +21,9 @@ import { countPuzzleDone } from '../../goal/goalStore'
 import { usePuzzleData } from '../../storage/usePuzzleData'
 import { useGames } from '../../storage/useGames'
 import { useMistakePuzzles } from '../../storage/useMistakePuzzles'
-import { duePuzzles } from '../../puzzles/mistakes'
-import { MistakeTrainer } from './MistakeTrainer'
+import { todaysSet } from '../../puzzles/mistakes'
+import { MistakesPage } from './MistakeTrainer'
+import { isMistakesRoute, MISTAKES } from './mistakeRoutes'
 import { GoalLine } from '../goal/GoalCard'
 import { drillStats } from '../../openings/drill'
 import { useOpeningDrills } from '../../storage/openingStore'
@@ -34,8 +35,6 @@ import { GameBoard } from '../play/GameBoard'
 /** Mixed practice from your weakest themes, or one chosen theme. */
 const MIXED = 'mixed'
 
-/** Route theme that opens the trainer for your own mistakes. */
-export const MISTAKES = 'mistakes'
 
 export function PuzzlesScreen({ theme }: { theme?: string }) {
   const [puzzles, setPuzzles] = useState<Puzzle[] | null>(null)
@@ -44,10 +43,10 @@ export function PuzzlesScreen({ theme }: { theme?: string }) {
   const mistakes = useMistakePuzzles()
   const drills = useOpeningDrills()
   const [now] = useState(() => Date.now())
-  const dueCount = mistakes ? duePuzzles(mistakes, now).length : 0
+  const dueCount = mistakes ? todaysSet(mistakes, now).queue.length : 0
   const openingStats = drills ? drillStats(drills, now) : null
   const openingCount = openingStats ? openingStats.due + openingStats.fresh : 0
-  const mistakeMode = theme === MISTAKES
+  const mistakeMode = isMistakesRoute(theme)
   const openingMode = theme === OPENINGS || theme === OPENING_LINES
   const recommended = useMemo(() => recommendedThemes(games ? progressStats(games) : null), [games])
   const estimate = useMemo(() => (games ? ratingSummary(games).estimate : null), [games])
@@ -122,7 +121,7 @@ export function PuzzlesScreen({ theme }: { theme?: string }) {
         </div>
         {modeSwitch}
         <GoalLine />
-        {mistakes ? <MistakeTrainer puzzles={mistakes} /> : <p className="muted">Loading…</p>}
+        {mistakes ? <MistakesPage puzzles={mistakes} theme={theme ?? MISTAKES} /> : <p className="muted">Loading…</p>}
       </div>
     )
   }

@@ -19,6 +19,9 @@ import { NewGameForm } from './NewGameForm'
 import { PlayerStrip } from './PlayerStrip'
 import { loadSettings, saveSettings, usePlayGame } from './usePlayGame'
 import { nextLevelRating } from '../../rating/adaptive'
+import { mainPattern, PATTERNS } from '../../puzzles/patterns'
+import { routeHref } from '../../app/route'
+import { MISTAKE_PATTERN_PREFIX } from '../puzzles/mistakeRoutes'
 import { findLevel } from '../../config/levels'
 import { usePreferences } from './usePreferences'
 import { AboutSection } from '../settings/AboutSection'
@@ -88,6 +91,10 @@ export function PlayScreen() {
           label: findLevel(adaptiveRating).label,
           change: adaptiveRating > play.level.rating ? 'up' : adaptiveRating < play.level.rating ? 'down' : 'same',
         }
+  const main = play.status.over ? mainPattern(analysis.notes) : null
+  const mainMistake = main
+    ? { label: PATTERNS[main.pattern].label, count: main.count, href: routeHref({ name: 'puzzles', theme: MISTAKE_PATTERN_PREFIX + main.pattern }) }
+    : null
   // Remember it, so the New game sheet starts from the new level too.
   useEffect(() => {
     if (adaptiveRating !== null) saveSettings({ ...loadSettings(), levelRating: adaptiveRating })
@@ -178,6 +185,7 @@ export function PlayScreen() {
                 userColor={play.userColor}
                 onReview={() => navigate({ name: 'review', id: play.uid })}
                 next={nextLevel}
+                mainMistake={mainMistake}
                 onRematch={() => {
                   play.rematch(nextLevel?.rating)
                   setFlipped(false)

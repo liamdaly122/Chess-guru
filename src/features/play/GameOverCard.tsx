@@ -17,10 +17,12 @@ interface Props {
   onNewGame: () => void
   onClose: () => void
   next?: NextLevel | null
+  /** The game's most common kind of mistake, with a link to practise it. */
+  mainMistake?: { label: string; count: number; href: string } | null
 }
 
 /** Result card laid over the board when the game ends. */
-export function GameOverCard({ status, userColor, onReview, onRematch, onNewGame, onClose, next }: Props) {
+export function GameOverCard({ status, userColor, onReview, onRematch, onNewGame, onClose, next, mainMistake }: Props) {
   const outcome = status.winner === null ? 'draw' : status.winner === userColor ? 'win' : 'loss'
   const title = outcome === 'win' ? 'You won!' : outcome === 'loss' ? 'You lost' : 'Draw'
   const reason = status.reason === 'checkmate' ? 'by checkmate' : `by ${status.reason}`
@@ -41,6 +43,12 @@ export function GameOverCard({ status, userColor, onReview, onRematch, onNewGame
               {next.rating} {next.label}
             </strong>
             {next.change === 'same' ? ' again' : ''}
+          </p>
+        )}
+        {mainMistake && (
+          <p className="main-mistake" data-testid="main-mistake">
+            Main mistake: {mainMistake.label.toLowerCase()}
+            {mainMistake.count > 1 ? ` (${mainMistake.count} times)` : ''}. <a href={mainMistake.href}>Practise it</a>
           </p>
         )}
         <button type="button" className="primary wide game-over-review" onClick={onReview}>

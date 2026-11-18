@@ -8,7 +8,7 @@ import { themeRecords } from '../../storage/puzzleStore'
 import { usePuzzleData } from '../../storage/usePuzzleData'
 import { useGames } from '../../storage/useGames'
 import { useMistakePuzzles } from '../../storage/useMistakePuzzles'
-import { mistakeStats } from '../../puzzles/mistakes'
+import { patternStats, todaysSet } from '../../puzzles/mistakes'
 import { drillStats } from '../../openings/drill'
 import { useOpeningDrills } from '../../storage/openingStore'
 import { AccuracyChart } from './AccuracyChart'
@@ -35,7 +35,8 @@ export function ProgressScreen() {
   const puzzles = usePuzzleData()
   const mistakes = useMistakePuzzles()
   const [now] = useState(() => Date.now())
-  const mistakeInfo = mistakes ? mistakeStats(mistakes, now) : null
+  const mistakeInfo =
+    mistakes && mistakes.length > 0 ? { top: patternStats(mistakes, now)[0], today: todaysSet(mistakes, now).queue.length } : null
   const drills = useOpeningDrills()
   const openingInfo = drills ? drillStats(drills, now) : null
   const [filter, setFilter] = useState<Filter>('all')
@@ -213,10 +214,11 @@ export function ProgressScreen() {
 
         <section className="card" aria-label="Puzzles">
           <h2 className="card-title">Practise your weak spots</h2>
-          {mistakeInfo && mistakeInfo.total > 0 && (
+          {mistakeInfo && (
             <a className="mistakes-link" href={routeHref({ name: 'puzzles', theme: 'mistakes' })} data-testid="progress-mistakes">
-              <strong>Your own mistakes:</strong> {mistakeInfo.due} due, {mistakeInfo.learning} learning,{' '}
-              {mistakeInfo.mastered} mastered
+              <strong>Your most common mistake:</strong> {mistakeInfo.top.label.toLowerCase()} (
+              {mistakeInfo.top.times || mistakeInfo.top.timesEver} times).{' '}
+              {mistakeInfo.today > 0 ? `${mistakeInfo.today} to solve today.` : 'Done for today.'}
             </a>
           )}
           <a className="mistakes-link" href={routeHref({ name: 'puzzles', theme: 'openings' })} data-testid="progress-openings">

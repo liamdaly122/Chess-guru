@@ -6,6 +6,7 @@ import { lineToSan } from '../coach/facts'
 import { uciToSan } from '../chess/moves'
 import type { PositionAnalysis } from '../engine/uciInfo'
 import { buildLessons, categoryOf } from './lessons'
+import { patternOf } from '../puzzles/patterns'
 import { gamePhase } from './gamePhase'
 import type { GameReview, PlyReview } from './types'
 
@@ -58,7 +59,7 @@ export function buildReview(
 
     const n = notes[i]
     if (n === 'pending') complete = false
-    if (n && n !== 'pending') p.note = { text: n.text, tip: n.tip, category: categoryOf(n.fact?.type) }
+    if (n && n !== 'pending') p.note = { text: n.text, tip: n.tip, category: categoryOf(n.fact?.type), pattern: patternOf(n.fact) }
     return p
   })
 

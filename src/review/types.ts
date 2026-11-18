@@ -38,8 +38,8 @@ export interface PlyReview {
   evalAfter: Score | null
   /** Only for the user's moves. */
   judgement?: PlyJudgement
-  /** Only for the user's mistakes and blunders. */
-  note?: { text: string; tip: string; category: LessonCategory }
+  /** Only for the user's mistakes and blunders. `pattern` is a MistakePattern (puzzles/patterns.ts); older reviews lack it. */
+  note?: { text: string; tip: string; category: LessonCategory; pattern?: string }
   /** Opening, middlegame or endgame (from the position before the move). Older reviews may lack it. */
   phase?: GamePhase
 }

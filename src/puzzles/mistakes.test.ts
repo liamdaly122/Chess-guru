@@ -12,8 +12,15 @@ import {
   NEVER,
   schedule,
   whenText,
+  groupByPosition,
+  mergePuzzle,
+  patternSet,
+  patternStats,
+  todaysSet,
   type MistakePuzzle,
 } from './mistakes'
+import { mainPattern, patternOf } from './patterns'
+import type { PlyReview } from '../review/types'
 
 const DAY = 86_400_000
 const FEN = 'r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3'
@@ -85,8 +92,9 @@ describe('mistakePuzzlesFromGame', () => {
     const [p, ...rest] = mistakePuzzlesFromGame(game(), 5000)
     expect(rest).toEqual([]) // the inaccuracy and the opponent's move are skipped
     expect(p).toMatchObject({
-      id: 'g1:0',
+      id: 'r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq -', // the position, without move counters
       fen: FEN,
+      pattern: 'loose-piece', // from the category, as this older note has no pattern
       solution: 'f1b5',
       solutionSan: 'Bb5',
       playedSan: 'Nd4',
@@ -188,8 +196,125 @@ describe('checking answers', () => {
 describe('ordering', () => {
   it('keeps puzzles from one game in move order when they are due together', () => {
     const base = mistakePuzzlesFromGame(game(), 0)[0]
-    const later = { ...base, id: 'g1:12' }
-    const earlier = { ...base, id: 'g1:4' }
-    expect(duePuzzles([later, earlier], 10).map((p) => p.id)).toEqual(['g1:4', 'g1:12'])
+    const later = { ...base, id: 'b', ply: 12 }
+    const earlier = { ...base, id: 'a', ply: 4 }
+    expect(duePuzzles([later, earlier], 10).map((p) => p.ply)).toEqual([4, 12])
+  })
+})
+
+/** A reviewed game with one of your moves per entry: [winBefore, winAfter, pattern, fen]. */
+function gameWith(id: string, endedAt: number, moves: [number, number, string, string][]): GameRecord {
+  const plies: PlyReview[] = moves.map(([winBefore, winAfter, pattern, fen], i) => ({
+    san: `m${i}`,
+    uci: 'e2e4',
+    color: 'w',
+    fenBefore: `${fen} w - - 0 1`,
+    fenAfter: '',
+    evalAfter: null,
+    judgement: {
+      rating: winBefore - winAfter >= 15 ? 'blunder' : 'mistake',
+      bestUci: 'd2d4',
+      bestSan: 'd4',
+      winBefore,
+      winAfter,
+      scoreBefore: { kind: 'cp', cp: 0 },
+      scoreAfter: { kind: 'cp', cp: 0 },
+      bestLineSan: [],
+    },
+    note: { text: `note ${i}`, tip: 'tip', category: 'general', pattern },
+  }))
+  return { ...game(), id, endedAt, review: { startEval: null, accuracy: 50, lessons: [], complete: true, plies } }
+}
+
+describe('only the mistakes that matter', () => {
+  it('skips moves when already lost or still clearly winning, and keeps the 3 costliest per game', () => {
+    const g = gameWith('g', 1, [
+      [10, 0, 'fork-knight', 'lost'], // already lost
+      [99, 88, 'fork-knight', 'won'], // still winning
+      [60, 50, 'loose-piece', 'a'], // loses 10
+      [60, 20, 'fork-knight', 'b'], // loses 40
+      [50, 35, 'missed-mate', 'c'], // loses 15
+      [55, 30, 'ignored-threat', 'd'], // loses 25
+    ])
+    const ps = mistakePuzzlesFromGame(g, 5)
+    expect(ps.map((p) => p.fen.split(' ')[0])).toEqual(['b', 'c', 'd']) // costliest 3, in move order
+    expect(ps.map((p) => p.pattern)).toEqual(['fork-knight', 'missed-mate', 'ignored-threat'])
+  })
+
+  it('makes one puzzle for the same position across games', () => {
+    const a = mistakePuzzlesFromGame(gameWith('g1', 100, [[60, 20, 'fork-knight', 'same']]), 0)
+    const b = mistakePuzzlesFromGame(gameWith('g2', 200, [[60, 25, 'fork-knight', 'same']]), 0)
+    const merged = groupByPosition([...a, ...b], 300)
+    expect(merged.size).toBe(1)
+    const p = [...merged.values()][0]
+    expect(p.occurrences.map((o) => o.gameId)).toEqual(['g1', 'g2'])
+    expect(p.gameId).toBe('g2') // latest shown
+  })
+
+  it('starts the puzzle again if you make the same mistake after practising it', () => {
+    const first = { ...mistakePuzzlesFromGame(gameWith('g1', 100, [[60, 20, 'loose-piece', 'p']]), 0)[0], box: 3, attempts: 3, lastAt: 500, dueAt: 9000 }
+    const again = mistakePuzzlesFromGame(gameWith('g2', 800, [[60, 20, 'loose-piece', 'p']]), 0)[0]
+    expect(mergePuzzle(first, again, 1000)).toMatchObject({ box: 0, dueAt: 800, attempts: 3 })
+    // The same game again changes nothing.
+    expect(mergePuzzle(first, mistakePuzzlesFromGame(gameWith('g1', 100, [[60, 20, 'loose-piece', 'p']]), 0)[0], 1000)).toBe(first)
+  })
+})
+
+describe('patterns and daily sets', () => {
+  const now = 100 * DAY
+  const make = (gameId: string, pattern: string, fen: string, extra: Partial<MistakePuzzle> = {}) => ({
+    ...mistakePuzzlesFromGame(gameWith(gameId, now - DAY, [[60, 20, pattern, fen]]), now)[0],
+    ...extra,
+  })
+  const puzzles = [
+    make('g1', 'fork-knight', 'a'),
+    make('g2', 'fork-knight', 'b'),
+    make('g3', 'fork-knight', 'c'),
+    make('g1', 'loose-piece', 'd'),
+    make('g2', 'loose-piece', 'e'),
+    make('g3', 'missed-mate', 'f'),
+    make('g4', 'missed-mate', 'g', { box: 2, attempts: 2, dueAt: now + DAY }),
+  ]
+
+  it('ranks patterns by how often they happen', () => {
+    const stats = patternStats(puzzles, now)
+    expect(stats.map((s) => [s.pattern, s.times, s.games])).toEqual([
+      ['fork-knight', 3, 3],
+      ['loose-piece', 2, 2],
+      ['missed-mate', 2, 2],
+    ])
+    expect(stats[0].label).toBe('Walking into knight forks')
+    expect(stats.find((s) => s.pattern === 'missed-mate')).toMatchObject({ due: 1, improving: false })
+  })
+
+  it("serves today's set from the most common patterns, up to the daily limit", () => {
+    const set = todaysSet(puzzles, now)
+    expect(set.queue.map((p) => p.pattern)).toEqual(['fork-knight', 'fork-knight', 'fork-knight', 'loose-piece', 'loose-piece'])
+    expect(set.waiting).toBe(1)
+    // Two done today: three left.
+    const done = puzzles.map((p, i) => (i < 2 ? { ...p, lastAt: now, dueAt: now + DAY } : p))
+    expect(todaysSet(done, now)).toMatchObject({ doneToday: 2 })
+    expect(todaysSet(done, now).queue).toHaveLength(3)
+  })
+
+  it('builds a solve set for one pattern, due positions first', () => {
+    expect(patternSet(puzzles, 'missed-mate', now).map((p) => p.fen[0])).toEqual(['f', 'g'])
+  })
+
+  it('reads the pattern from the coaching fact', () => {
+    const piece = (type: 'n' | 'q' | 'p' | 'b') => ({ square: 'e5' as const, type, color: 'b' as const })
+    expect(patternOf({ type: 'allowed-fork', replySan: 'Nc7', forker: piece('n'), targets: [] })).toBe('fork-knight')
+    expect(patternOf({ type: 'allowed-fork', replySan: 'Bd5', forker: piece('b'), targets: [] })).toBe('fork')
+    expect(patternOf({ type: 'missed-mate', mateIn: 2, bestSan: 'Qh7+' })).toBe('missed-mate')
+    expect(patternOf(undefined)).toBe('general')
+  })
+})
+
+describe("a game's main mistake", () => {
+  it('is the most common pattern among its notes', () => {
+    const knight = { square: 'e5' as const, type: 'n' as const, color: 'b' as const }
+    const fork = { fact: { type: 'allowed-fork' as const, replySan: 'Nc7', forker: knight, targets: [] } }
+    expect(mainPattern([null, fork, 'pending', { fact: undefined }, fork])).toEqual({ pattern: 'fork-knight', count: 2 })
+    expect(mainPattern([null, 'pending'])).toBeNull()
   })
 })

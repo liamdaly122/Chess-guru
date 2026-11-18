@@ -50,7 +50,8 @@ async function tour(name, ctxOpts, browser) {
   await shot('review', true);
   await page.goto(BASE + '#/progress'); await shot('progress', true);
   await page.goto(BASE + '#/puzzles'); await page.getByTestId('puzzle-card').waitFor(); await shot('puzzles', true);
-  await page.goto(BASE + '#/puzzles/mistakes'); await page.getByTestId('mistake-card').waitFor(); await shot('mistakes', true);
+  await page.goto(BASE + '#/puzzles/mistakes'); await page.getByTestId('mistake-patterns').waitFor(); await shot('mistakes', true);
+  await page.getByTestId('start-today').click(); await page.getByTestId('mistake-card').waitFor(); await shot('mistake-session', true);
   await page.goto(BASE + '#/puzzles/openings'); await page.getByRole('searchbox', { name: 'Search openings' }).fill('Italian'); await shot('openings-lines', true);
   await page.locator('.line-row').first().getByRole('button', { name: 'Learn as White' }).click();
   await page.goto(BASE + '#/puzzles/openings'); await page.getByTestId('opening-card').waitFor(); await shot('openings', true);

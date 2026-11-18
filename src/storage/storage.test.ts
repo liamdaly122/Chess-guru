@@ -171,3 +171,53 @@ describe('backup version 2', () => {
     expect(await importBackup(old)).toEqual({ restored: 1, skipped: 0, puzzles: 0, openings: 0 })
   })
 })
+
+describe('mistake puzzles grouped by position', () => {
+  it('moves old puzzles over, keeping progress, and adds repeat mistakes as occurrences', async () => {
+    const { syncMistakePuzzles, listMistakePuzzles, saveMistakePuzzle } = await import('./mistakeStore')
+    const FEN = 'r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3'
+    const reviewed = (id: string, endedAt: number) =>
+      game(id, endedAt, {
+        review: {
+          startEval: null,
+          accuracy: 60,
+          lessons: [],
+          complete: true,
+          plies: [
+            {
+              san: 'Nd4',
+              uci: 'f3d4',
+              color: 'w',
+              fenBefore: FEN,
+              fenAfter: '',
+              evalAfter: null,
+              judgement: {
+                rating: 'blunder',
+                bestUci: 'f1b5',
+                bestSan: 'Bb5',
+                winBefore: 55,
+                winAfter: 10,
+                scoreBefore: { kind: 'cp', cp: 30 },
+                scoreAfter: { kind: 'cp', cp: -300 },
+                bestLineSan: [],
+              },
+              note: { text: 'Loose knight.', tip: 'Check pieces.', category: 'loose-pieces', pattern: 'loose-piece' },
+            },
+          ],
+        },
+      })
+    // An old-style puzzle (one per game and move) with some progress.
+    await saveMistakePuzzle({ id: 'a:0', fen: FEN, solution: 'f1b5', box: 2, dueAt: 5000, attempts: 2, cleanSolves: 2, lastAt: 50 } as never)
+
+    expect(await syncMistakePuzzles([reviewed('a', 10)], 100)).toBe(0) // moved, not added
+    let [p] = await listMistakePuzzles()
+    expect(p).toMatchObject({ id: 'r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq -', box: 2, attempts: 2, pattern: 'loose-piece' })
+    expect(await listMistakePuzzles()).toHaveLength(1)
+
+    // The same mistake in a later game: one puzzle, two occurrences, started again.
+    await syncMistakePuzzles([reviewed('a', 10), reviewed('b', 200)], 300)
+    ;[p] = await listMistakePuzzles()
+    expect(p.occurrences.map((o) => o.gameId)).toEqual(['a', 'b'])
+    expect(p).toMatchObject({ box: 0, dueAt: 200 })
+  })
+})
