@@ -9,7 +9,9 @@ import { Switch } from '../../ui/Switch'
 import { BulbIcon, FlipIcon, PlusIcon, SettingsIcon, UndoIcon } from '../../ui/icons'
 import { CoachBubble } from './CoachBubble'
 import { CoachCard } from './CoachCard'
-import { coachMessage } from './coachMessage'
+import { coachMessage, type CoachMessage } from './coachMessage'
+import { BLUNDER_CHECK } from '../../config/blunderCheck'
+import { needsBlunderCheck } from '../../coach/blunderCheck'
 import { MoveStrip } from './MoveStrip'
 import { EvalBar } from './EvalBar'
 import { GameBoard, type BoardBadge } from './GameBoard'
@@ -53,17 +55,43 @@ export function PlayScreen() {
   const saver = useSaveBotGame(play, analysis, openingInfo?.status.opening ?? null)
 
   // With live coaching on, let the rating of your move appear before the bot replies,
-  // but never wait longer than COACH.botWaitsForRatingMs.
+  // but never wait longer than COACH.botWaitsForRatingMs (longer with blunder check, which needs it).
   const lastPly = play.history.length - 1
-  const waitingForRating =
-    prefs.liveCoaching && lastPly >= 0 && play.history[lastPly].color === play.userColor && analysis.ratings[lastPly] === 'pending'
+  const lastIsUsers = lastPly >= 0 && play.history[lastPly].color === play.userColor
+  const checkOn = prefs.blunderCheck
+  const waitingForRating = (prefs.liveCoaching || checkOn) && lastIsUsers && analysis.ratings[lastPly] === 'pending'
   const [timedOutPly, setTimedOutPly] = useState<number | null>(null)
   useEffect(() => {
     if (!waitingForRating) return
-    const t = setTimeout(() => setTimedOutPly(lastPly), COACH.botWaitsForRatingMs)
+    const t = setTimeout(() => setTimedOutPly(lastPly), checkOn ? BLUNDER_CHECK.waitForRatingMs : COACH.botWaitsForRatingMs)
     return () => clearTimeout(t)
-  }, [waitingForRating, lastPly])
-  const shouldHold = waitingForRating && timedOutPly !== lastPly
+  }, [waitingForRating, lastPly, checkOn])
+
+  // Blunder check: if your move is a blunder, hold the bot and ask once, without saying why.
+  const [kept, setKept] = useState<string[]>([])
+  const lastRating = lastIsUsers ? analysis.ratings[lastPly] : null
+  const lastKey = `${play.uid}:${lastPly}:${play.moves[lastPly] ?? ''}`
+  const askBlunder = needsBlunderCheck(lastRating, { on: checkOn, gameOver: play.status.over, alreadyAsked: kept.includes(lastKey) })
+  // While asking, the move's rating and note stay hidden.
+  const shownRatings = askBlunder ? userRatings.map((r, i) => (i === lastPly ? null : r)) : userRatings
+  const shownNotes = askBlunder ? userNotes.map((n, i) => (i === lastPly ? null : n)) : userNotes
+  const askMessage: CoachMessage = {
+    id: 'blunder-check',
+    tone: 'warning',
+    title: 'Are you sure?',
+    text: 'Take another look at the position before you commit to this move.',
+    actions: [
+      { label: 'Take it back', primary: true, onClick: () => play.retractForBlunderCheck() },
+      {
+        label: 'Play it anyway',
+        onClick: () => {
+          setKept((k) => [...k, lastKey])
+          play.keepAfterBlunderCheck()
+        },
+      },
+    ],
+  }
+  const shouldHold = (waitingForRating && timedOutPly !== lastPly) || askBlunder
   if (shouldHold !== holdBot) setHoldBot(shouldHold) // derived state, updated during render
   const [flipped, setFlipped] = useState(false)
   const [modal, setModal] = useState<'new' | 'settings' | null>(null)
@@ -90,7 +118,8 @@ export function PlayScreen() {
       ? nextLevelRating(
           play.level.rating,
           play.status.winner === null ? 'draw' : play.status.winner === play.userColor ? 'win' : 'loss',
-          play.takebacks,
+          // A win where blunder check stopped you counts like one with takebacks.
+          play.takebacks + play.blunderChecks,
         )
       : null
   const nextLevel: NextLevel | null =
@@ -111,7 +140,7 @@ export function PlayScreen() {
   }, [adaptiveRating, play.uid])
 
   // Badge on the square your last move landed on, until your next move (hidden if the bot captured it).
-  const badge = showRatings ? lastUserBadge(play.history, userRatings, play.userColor, play.game) : null
+  const badge = showRatings ? lastUserBadge(play.history, shownRatings, play.userColor, play.game) : null
 
   const hint = prefs.hintMode && play.isUserTurn ? analysis.hint : null
   const glowSquare = hint && hintStep === 2 ? hint.pieceSquare : null
@@ -125,7 +154,8 @@ export function PlayScreen() {
 
   const isMaia = play.level.engine.kind === 'maia'
   let statusText = describeStatus(play.status, play.userColor)
-  if (play.engineError) statusText = play.engineError
+  if (askBlunder) statusText = 'Take it back, or play it anyway?'
+  else if (play.engineError) statusText = play.engineError
   else if (!play.engineReady) statusText = 'Loading engine…'
   else if (isMaia && play.maiaStatus.state === 'loading' && !play.isUserTurn && !play.status.over) {
     statusText = `Downloading the human-like bot… ${Math.round(play.maiaStatus.progress * 100)}%`
@@ -139,14 +169,14 @@ export function PlayScreen() {
 
   const showGameOver = play.status.over && dismissedGameOver !== play.history.length
   const evalScore = latestEval(analysis.snapshot, play.positions)
-  const badgeRatings = userRatings.map((r) => (r && r !== 'pending' ? r.rating : r))
+  const badgeRatings = shownRatings.map((r) => (r && r !== 'pending' ? r.rating : r))
   const bookNote = showRatings
     ? leftBookNote(openingInfo, play.history, lastUserPly(play.history, play.userColor), play.userColor)
     : null
   const coachInput = {
     history: play.history,
-    ratings: userRatings,
-    notes: userNotes,
+    ratings: shownRatings,
+    notes: shownNotes,
     liveCoaching: prefs.liveCoaching,
     gameOver,
     resultText: play.status.over ? resultText(play.status, play.userColor) : undefined,
@@ -155,9 +185,9 @@ export function PlayScreen() {
     botNote: maiaNote,
     bookNote,
   }
-  const coach = coachMessage(coachInput)
+  const coach = askBlunder ? askMessage : coachMessage(coachInput)
   // Beside the board the hint card lists the hint steps, so the bubble keeps the move rating.
-  const coachBeside = coachMessage({ ...coachInput, hint: null, hintStep: 0 })
+  const coachBeside = askBlunder ? askMessage : coachMessage({ ...coachInput, hint: null, hintStep: 0 })
 
   return (
     <div className="play-screen">
@@ -173,7 +203,7 @@ export function PlayScreen() {
           detail={`${play.level.rating} · ${play.level.label}${isMaia ? ' · human-like' : ''}`}
           color={botColor}
           material={material[botColor]}
-          thinking={play.botThinking}
+          thinking={play.botThinking && !askBlunder}
           toMove={!gameOver && !play.isUserTurn}
         />
         <div className="board-row">
@@ -184,7 +214,7 @@ export function PlayScreen() {
             userColor={play.userColor}
             canMove={play.engineReady && play.isUserTurn}
             lastMove={lastMove}
-            onMove={play.playUserMove}
+            onMove={(m) => play.playUserMove(m, prefs.blunderCheck)}
             badge={badge}
             glowSquare={glowSquare}
             arrow={arrow}
@@ -209,7 +239,13 @@ export function PlayScreen() {
         <PlayerStrip
           kind="you"
           name="You"
-          detail={play.takebacks > 0 ? `${statusText} · ${play.takebacks} takeback${play.takebacks > 1 ? 's' : ''}` : statusText}
+          detail={[
+            statusText,
+            play.takebacks > 0 ? `${play.takebacks} takeback${play.takebacks > 1 ? 's' : ''}` : '',
+            play.blunderChecks > 0 ? `${play.blunderChecks} blunder check${play.blunderChecks > 1 ? 's' : ''}` : '',
+          ]
+            .filter(Boolean)
+            .join(' · ')}
           color={play.userColor}
           material={material[play.userColor]}
           toMove={!gameOver && play.isUserTurn}
@@ -258,8 +294,8 @@ export function PlayScreen() {
         <CoachCard
           className={gameOver ? '' : 'desktop-only'}
           history={play.history}
-          ratings={userRatings}
-          notes={userNotes}
+          ratings={shownRatings}
+          notes={shownNotes}
           message={coachBeside}
           gameOver={gameOver}
           hintMode={prefs.hintMode}
@@ -317,6 +353,12 @@ export function PlayScreen() {
             description="Show the hint button: first a nudge, then the piece, then the move."
             checked={prefs.hintMode}
             onChange={(v) => setPrefs({ hintMode: v })}
+          />
+          <Switch
+            label="Blunder check"
+            description="If my move is a blunder, stop me once and ask if I'm sure, without saying why. Games with it on don't count towards my rating estimate."
+            checked={prefs.blunderCheck}
+            onChange={(v) => setPrefs({ blunderCheck: v })}
           />
           <Switch
             label="Evaluation bar"

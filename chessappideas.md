@@ -2,16 +2,13 @@
 
 By Liam Daly. A list of possible improvements, roughly in the order I'd consider them. Effort is a rough guide: small (an afternoon), medium (a day or two), large (several days).
 
-Done so far: human-like Maia-3 bots, installable app, puzzles from your own mistakes (with spaced repetition), backup to Files / iCloud Drive, the opening trainer, automatic Lichess import (with background reviews), the rating estimate, the adaptive bot, the daily goal with streaks, mistakes grouped by pattern, and a Chess.com-style game review (key moments, Retry, Follow-up and Explore, which cover the old "guess the move" and "try alternatives" ideas).
+Done so far: human-like Maia-3 bots, installable app, puzzles from your own mistakes (with spaced repetition), backup to Files / iCloud Drive, the opening trainer, automatic Lichess import (with background reviews), the rating estimate, the adaptive bot, the daily goal with streaks, mistakes grouped by pattern, and a Chess.com-style game review (key moments, Retry, Follow-up and Explore, which cover the old "guess the move" and "try alternatives" ideas), and blunder check mode.
 
 ## Becoming a better player
 
-Ideas aimed at playing better, built on what the app already has (the engine, reviewed games and the coaching facts). None need a server or AI, and none can help in a live game elsewhere. Suggested order: blunder check mode, then win the won position (with hold the bad position), then endgame drills (under Training below).
+Ideas aimed at playing better, built on what the app already has (the engine, reviewed games and the coaching facts). None need a server or AI, and none can help in a live game elsewhere. Suggested order: win the won position (with hold the bad position), then endgame drills (under Training below).
 
 ### Stop throwing games away
-
-**Blunder check mode** (small)
-In bot games, if my move is a blunder, the coach stops me once with "Are you sure? Look again", without saying why. I can take the move back or play it anyway. Builds the habit of checking before moving. Games played with it on don't count towards the rating estimate.
 
 **Win the won position** (small to medium)
 Positions from my games where I was clearly winning (say +3 or better) but didn't win. I play on from there against Stockfish until I convert. Practice aimed at exactly the chances I let slip.

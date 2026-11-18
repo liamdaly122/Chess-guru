@@ -29,6 +29,7 @@ function botRecord(play: Play, status: Finished, review: GameReview, endedAt: nu
     botLevel: play.level.rating,
     takebacks: play.takebacks,
     hintedPlies: play.hintedPlies,
+    ...(play.blunderCheck ? { blunderCheck: true, blunderChecks: play.blunderChecks } : {}),
     opening: opening?.name,
     eco: opening?.eco,
     review,

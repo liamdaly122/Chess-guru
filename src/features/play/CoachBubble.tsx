@@ -51,6 +51,15 @@ export function CoachBubble({ message }: { message: CoachMessage }) {
             {message.tip}
           </p>
         )}
+        {message.actions && message.actions.length > 0 && (
+          <div className="coach-speech-actions">
+            {message.actions.map((a) => (
+              <button key={a.label} type="button" className={a.primary ? 'primary' : ''} onClick={a.onClick}>
+                {a.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

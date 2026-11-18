@@ -20,7 +20,7 @@ export interface RatingEstimate {
   losses: number
 }
 
-/** Games that count: against the bot, from the normal start, finished, with no takebacks or hints. */
+/** Games that count: against the bot, from the normal start, finished, with no takebacks, hints or blunder check. */
 export function countsForRating(g: GameRecord): boolean {
   return (
     g.source === 'bot' &&
@@ -28,7 +28,8 @@ export function countsForRating(g: GameRecord): boolean {
     !g.startFen &&
     g.result !== '*' &&
     !(g.takebacks ?? 0) &&
-    !(g.hintedPlies?.length ?? 0)
+    !(g.hintedPlies?.length ?? 0) &&
+    !g.blunderCheck
   )
 }
 

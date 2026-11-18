@@ -7,10 +7,12 @@ export interface Preferences {
   liveCoaching: boolean
   /** Show the hint button. */
   hintMode: boolean
+  /** Bot games: stop me once when my move is a blunder, without saying why. */
+  blunderCheck: boolean
 }
 
 const KEY = 'chess-guru:preferences'
-const DEFAULTS: Preferences = { showEval: true, liveCoaching: true, hintMode: true }
+const DEFAULTS: Preferences = { showEval: true, liveCoaching: true, hintMode: true, blunderCheck: false }
 
 function load(): Preferences {
   try {

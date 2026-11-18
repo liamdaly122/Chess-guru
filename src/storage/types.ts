@@ -28,6 +28,9 @@ export interface GameRecord {
   botLevel?: number
   takebacks?: number
   hintedPlies?: number[]
+  /** Blunder check was on during the game, and how many times it stopped the user. */
+  blunderCheck?: boolean
+  blunderChecks?: number
   /** Lichess games: link to the game. */
   url?: string
   speed?: string

@@ -25,6 +25,8 @@ export interface CoachMessage {
    * which changes as the search deepens). Without it, each new message slides in.
    */
   id?: string
+  /** Buttons under the text, e.g. blunder check's "Take it back" and "Play it anyway". */
+  actions?: { label: string; onClick: () => void; primary?: boolean }[]
 }
 
 export interface CoachInput {

@@ -36,6 +36,10 @@ interface GameState {
   takebacks: number
   /** Half-move indexes where the user asked for a hint before moving. */
   hintedPlies: number[]
+  /** Blunder check was on for at least one of the user's moves. */
+  blunderCheck: boolean
+  /** Times blunder check stopped the user (taken back or played anyway). */
+  blunderChecks: number
 }
 
 const SETTINGS_KEY = 'chess-guru:new-game-settings'
@@ -101,6 +105,8 @@ function freshGame(id: number, userColor: Color, level: Level, startFen?: string
     moves: [],
     takebacks: 0,
     hintedPlies: [],
+    blunderCheck: false,
+    blunderChecks: 0,
   }
 }
 
@@ -218,9 +224,9 @@ export function usePlayGame({ holdBot = false }: PlayOptions = {}) {
     return () => controller.abort()
   }, [opponent, ready, holdBot, game, positions, status.over, state.userColor, state.level, state.id, state.moves.length])
 
-  /** Try to play a move for the user. Returns true if it was legal. */
+  /** Try to play a move for the user. Returns true if it was legal. `blunderCheck`: the setting is on. */
   const playUserMove = useCallback(
-    (input: MoveInput): boolean => {
+    (input: MoveInput, blunderCheck = false): boolean => {
       if (!isUserTurn) return false
       const test = new Chess(game.fen())
       let move: Move
@@ -230,11 +236,29 @@ export function usePlayGame({ holdBot = false }: PlayOptions = {}) {
         return false
       }
       const uci = move.from + move.to + (move.promotion ?? '')
-      setState((prev) => ({ ...prev, moves: [...prev.moves, uci] }))
+      setState((prev) => ({ ...prev, moves: [...prev.moves, uci], blunderCheck: prev.blunderCheck || blunderCheck }))
       return true
     },
     [game, isUserTurn],
   )
+
+  /**
+   * Blunder check: take back the user's last move (the bot hasn't replied yet). Not counted as a
+   * takeback; counted as a blunder check instead.
+   */
+  const retractForBlunderCheck = useCallback(() => {
+    setState((prev) => {
+      const g = replay(prev.startFen, prev.moves)
+      if (prev.moves.length === 0 || g.turn() === prev.userColor) return prev
+      const moves = prev.moves.slice(0, -1)
+      return { ...prev, moves, blunderChecks: prev.blunderChecks + 1, hintedPlies: prev.hintedPlies.filter((p) => p < moves.length) }
+    })
+  }, [])
+
+  /** Blunder check: the user decided to play the move anyway. */
+  const keepAfterBlunderCheck = useCallback(() => {
+    setState((prev) => ({ ...prev, blunderChecks: prev.blunderChecks + 1 }))
+  }, [])
 
   const undo = useCallback(() => {
     setState((prev) => {
@@ -291,6 +315,10 @@ export function usePlayGame({ holdBot = false }: PlayOptions = {}) {
     level: state.level,
     takebacks: state.takebacks,
     hintedPlies: state.hintedPlies,
+    blunderCheck: state.blunderCheck,
+    blunderChecks: state.blunderChecks,
+    retractForBlunderCheck,
+    keepAfterBlunderCheck,
     engineName: botName(state.level),
     maiaStatus,
     engineReady: ready,

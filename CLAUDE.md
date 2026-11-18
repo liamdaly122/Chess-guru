@@ -93,6 +93,7 @@ Testing tip: open `http://localhost:5173/?fen=<FEN>` to start a game from any po
   - The game-over card names the game's main pattern ("Main mistake: walking into knight forks (2 times). Practise it"), from the game's coaching notes (`mainPattern`).
   - Correct answers, spaced repetition and the engine check are as before: the engine move, any checkmate, or a move within 5 Win% of the best (depth 14, 3 s); boxes 1, 3, 7, 14 days via `training/srs.ts`.
   - **Moving old puzzles over:** puzzles saved before this (one per game and move, no `occurrences`) are replaced by `syncMistakePuzzles`. Progress moves to the puzzle for the same position if there is one; the rest are dropped. Stored in IndexedDB `mistakePuzzles` (same store, no version change).
+- **Blunder check** (`coach/blunderCheck.ts`, settings `config/blunderCheck.ts`, switch in Settings, preference `blunderCheck`, off by default). In bot games, when your move is rated a blunder (not when you were already clearly lost, Win% 10 or less), the bot is held and the coach bubble asks "Are you sure? Take another look..." without saying why, with "Take it back" and "Play it anyway" (`CoachMessage.actions`). The move's rating and note stay hidden until you decide. With it on, the bot waits up to 6 s for your move's rating (instead of 2.5 s); if the rating arrives after the bot started, the bot's search is stopped and you're still asked. Asked once per move (playing it anyway isn't asked again; a take-back and the same move again is). "Take it back" (`retractForBlunderCheck`) is not a takeback: it counts in `blunderChecks`, shown under your name. Games where it was on are saved with `blunderCheck: true` and left out of the rating estimate; a win where it stopped you keeps the adaptive bot's level.
 - **App icon (Nov 2026)**: a drawn knight replaced the ♞ font character (user's request: the old head looked odd). One drawing, `src/ui/knight-paths.json` (angular silhouette, stepped mane, shaded facets, eye, base), used by the icon builder (`scripts/icon/iconSvg.cjs`, `scripts/build-icons.cjs`: deep green gradient tile, faint chessboard, soft glow, gold spark) and by `ui/KnightMark.tsx` (header logo, coach avatar). The iPhone icon is a full square (iOS rounds it; transparent corners would show black) and the maskable icon keeps the knight in the safe zone. An installed iPhone app keeps its old home-screen icon until it is removed and added again, and removing it deletes its data, so back up first.
 - **Crash fix and safety net**: right after the pattern update, phones with old-format mistake puzzles crashed on Train and Progress (the pages read `occurrences` before the sync had moved the puzzles over). `listMistakePuzzles` now leaves out old-format puzzles until they are moved. Every page is wrapped in `ui/ErrorBoundary.tsx` (keyed per page; Play has its own), so a crash shows "Something went wrong on this page" with Reload instead of a blank app. When stored data changes shape, read it defensively until it is migrated.
 - **Games list groups** (`features/games/gameGroups.ts`): games are shown in collapsible groups (Today, Yesterday, Last 7 days, then one per month) with the number of games and wins/losses/draws. The newest group starts open, the others closed, and each shows 10 games at a time with "Show more".
@@ -175,6 +176,8 @@ src/storage/openingStore.ts    opening lines storage and hook
 src/features/openings/         opening panel, "left the book" note, opening trainer and line picker
 src/goal/                      daily goal and streaks: logic, storage, wording
 src/config/goal.ts             daily goal defaults and choices (edit to tune)
+src/coach/blunderCheck.ts      when blunder check asks "Are you sure?"
+src/config/blunderCheck.ts     blunder check settings (edit to tune)
 src/features/goal/             goal card (Progress), goal line (Train), goal done message
 src/rating/                    rating estimate from bot games, adaptive bot level
 src/config/rating.ts           rating estimate and adaptive bot settings (edit to tune)
@@ -207,6 +210,7 @@ src/ui/styles.css              all styles, mobile-first, dark mode
 - [x] Daily goal and streaks (from the ideas list)
 - [x] Mistakes grouped by pattern, with a daily set; games list in groups
 - [x] Game review redesign, Chess.com style (summary first, key moments, why each key move was good or bad, Retry, Follow-up, Explore)
+- [x] Blunder check mode (from the ideas list)
 
 ## Working agreement
 
