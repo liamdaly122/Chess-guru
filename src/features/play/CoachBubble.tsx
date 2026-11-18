@@ -10,7 +10,7 @@ import { RatingBadge } from './RatingBadge'
  * coach card beside the board instead.
  */
 export function CoachBubble({ message }: { message: CoachMessage }) {
-  const key = `${message.title ?? ''}|${message.text}`
+  const key = message.id ?? `${message.title ?? ''}|${message.text}`
   const [tipFor, setTipFor] = useState<string | null>(null)
   const showTip = tipFor === key
 

@@ -4,7 +4,7 @@ import { winPercent, type Score } from '../../chess/score'
 interface Props {
   /** Evaluations from White's point of view: the start position, then after each half-move. */
   evals: (Score | null)[]
-  /** Rated user moves to mark on the graph (half-move index and rating). */
+  /** Moves to mark on the graph (the key moments): half-move index and rating. */
   marks: { ply: number; rating: MoveRating }[]
   /** Half-move being shown (-1 = start). */
   current: number
@@ -16,7 +16,7 @@ const H = 100
 
 /**
  * White's winning chances across the game. The light area is White's share.
- * Dots mark the user's mistakes and blunders. Tap anywhere to jump to that move.
+ * Dots mark the key moments, coloured by rating. Tap anywhere to jump to that move.
  */
 export function EvalGraph({ evals, marks, current, onSelect }: Props) {
   const n = evals.length - 1
@@ -36,7 +36,7 @@ export function EvalGraph({ evals, marks, current, onSelect }: Props) {
     onSelect(Math.max(-1, Math.min(n - 1, i - 1)))
   }
 
-  const shown = marks.filter((m) => m.rating === 'mistake' || m.rating === 'blunder' || m.rating === 'brilliant')
+  const shown = marks
 
   return (
     <div className="eval-graph" onClick={pick} role="img" aria-label="Evaluation graph. Tap to jump to a move." data-testid="eval-graph">

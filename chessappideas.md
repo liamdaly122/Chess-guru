@@ -2,7 +2,7 @@
 
 By Liam Daly. A list of possible improvements, roughly in the order I'd consider them. Effort is a rough guide: small (an afternoon), medium (a day or two), large (several days).
 
-Done so far: human-like Maia-3 bots, installable app, puzzles from your own mistakes (with spaced repetition), backup to Files / iCloud Drive, the opening trainer, automatic Lichess import (with background reviews), the rating estimate, the adaptive bot, and the daily goal with streaks.
+Done so far: human-like Maia-3 bots, installable app, puzzles from your own mistakes (with spaced repetition), backup to Files / iCloud Drive, the opening trainer, automatic Lichess import (with background reviews), the rating estimate, the adaptive bot, the daily goal with streaks, mistakes grouped by pattern, and a Chess.com-style game review (key moments, Retry, Follow-up and Explore, which cover the old "guess the move" and "try alternatives" ideas).
 
 ## Becoming a better player
 
@@ -20,9 +20,6 @@ Positions from my games where I was clearly winning (say +3 or better) but didn'
 The reverse: positions from my losses where I was worse but the game could still be saved, played on against the bot. Teaches finding the most stubborn defence.
 
 ### Think, don't just react
-
-**Guess the move in reviews** (small)
-Before the review shows a mistake, it stops at that position and asks me to find a better move, then shows the engine's answer. Thinking about the position first instead of just reading the answer.
 
 **What does my opponent want?** (small)
 Now and then during a bot game the coach asks me to tap the square my opponent is threatening, then shows the answer. Uses the existing null-move threat analysis. Replaces the earlier "show the opponent's threat" idea.
@@ -51,9 +48,6 @@ Trade-offs: changes the original "no accounts or cloud database" rule; needs a S
 
 **Endgame drills** (small to medium)
 Classic endgames to practise against Stockfish from set positions: king and queen against king, king and rook against king, Lucena and Philidor positions, basic pawn endings.
-
-**Try alternatives in review** (medium)
-From any position in a saved game, play your own moves and see the engine's verdict and line. Only from saved games, so it can't help in a live game elsewhere.
 
 ## Progress and motivation
 

@@ -20,6 +20,11 @@ export interface CoachMessage {
   evalText?: string
   /** Which side the evaluation favours, for the chip's colour. */
   evalFavours?: 'w' | 'b'
+  /**
+   * Keeps the bubble in place while the text updates (for example the engine line in Explore,
+   * which changes as the search deepens). Without it, each new message slides in.
+   */
+  id?: string
 }
 
 export interface CoachInput {

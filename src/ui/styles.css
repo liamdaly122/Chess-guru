@@ -3731,3 +3731,313 @@ a.chip.active {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   overflow-wrap: anywhere;
 }
+
+/* ============================================================
+   Game review redesign: summary first, key moments
+   ============================================================ */
+
+.dot-great {
+  background: var(--r-great);
+}
+
+.dot-best {
+  background: var(--r-best);
+}
+
+.dot-inaccuracy {
+  background: var(--r-inaccuracy);
+}
+
+.dot-good {
+  background: var(--r-good);
+}
+
+.review-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.start-review {
+  min-height: 52px;
+  font-size: 1.05rem;
+}
+
+.players-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 12px;
+}
+
+.player-acc {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.player-acc-name {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+.accuracy.opponent {
+  border-color: var(--muted);
+  background: var(--surface-2);
+}
+
+.ratings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.ratings-table th {
+  padding: 0 0 6px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ratings-table th,
+.ratings-table td:not(:first-child) {
+  width: 22%;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.ratings-table td {
+  padding: 5px 0;
+  border-top: 1px solid var(--border);
+}
+
+.ratings-table td:first-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.ratings-table td:not(:first-child) {
+  font-weight: 800;
+}
+
+.phases-card {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  text-align: center;
+}
+
+.phase-score {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.phase-grade {
+  font-weight: 800;
+}
+
+.grade-excellent .phase-grade,
+.grade-good .phase-grade {
+  color: var(--accent);
+}
+
+.grade-ok .phase-grade {
+  color: var(--r-inaccuracy);
+}
+
+.grade-needs-work .phase-grade {
+  color: var(--r-mistake);
+}
+
+.moment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.moment-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  padding: 6px 4px;
+  border: none;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  background: none;
+  text-align: left;
+  font-weight: 500;
+}
+
+.moment-list li:first-child .moment-button {
+  border-top: none;
+}
+
+.moment-move {
+  font-weight: 700;
+  min-width: 80px;
+}
+
+.lessons.card ol {
+  margin: 0;
+}
+
+/* Review mode: navigation and tools */
+.review-screen .review-nav {
+  grid-template-columns: 56px 1fr 56px;
+}
+
+.review-nav .review-pos {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  line-height: 1.2;
+}
+
+.moment-chip {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.moment-chip.kind-blunder,
+.moment-chip.kind-mistake,
+.moment-chip.kind-miss {
+  background: color-mix(in srgb, var(--r-mistake) 15%, transparent);
+  color: var(--r-mistake);
+}
+
+.moment-chip.kind-brilliant,
+.moment-chip.kind-great,
+.moment-chip.kind-opponent-mistake,
+.moment-chip.kind-checkmate {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.review-nav .finish-button {
+  font-size: 0.9rem;
+  padding: 0 8px;
+}
+
+.review-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.segmented {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
+.segmented button {
+  min-height: 34px;
+  padding: 4px 12px;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.segmented button.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+}
+
+.tool-button {
+  min-height: 40px;
+  padding: 6px 12px;
+  font-size: 0.88rem;
+}
+
+.tool-button.icon-only {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  padding: 0;
+}
+
+.tool-button.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+@media (min-width: 960px) {
+  .summary-mode .side-area {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 700px) {
+  .summary-mode .board-area {
+    gap: 0;
+  }
+
+  .review-tools {
+    margin: 0 12px;
+  }
+}
+
+.review-tools {
+  justify-content: space-between;
+}
+
+.review-actions-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 6px;
+}
+
+.review-actions-row .tool-button {
+  width: 100%;
+}
+
+@media (max-width: 700px) {
+  .review-actions-row {
+    margin: 0 12px;
+  }
+}
+
+.review-heading .link-button.back-link {
+  min-height: 0;
+  padding: 0;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.review-actions-row {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.review-actions-row .tool-button {
+  padding: 6px 4px;
+  white-space: nowrap;
+}

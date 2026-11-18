@@ -106,6 +106,11 @@ export function patternOf(fact: Fact | undefined): MistakePattern {
   }
 }
 
+/** Patterns used only as stand-ins for older reviews, which a re-analysis can make more precise. */
+export function isBroadPattern(p: string): boolean {
+  return p === 'fork' || p === 'pin-skewer' || p === 'missed-tactic'
+}
+
 /** Older reviews only stored the lesson category: the closest pattern to it. */
 export function patternFromCategory(c: LessonCategory): MistakePattern {
   const map: Record<LessonCategory, MistakePattern> = {

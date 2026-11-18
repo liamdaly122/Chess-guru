@@ -1,5 +1,5 @@
 import type { Color, Move } from 'chess.js'
-import type { PlyNote, PlyRating } from '../analysis/useGameAnalysis'
+import type { PlyNote, PlyRating, PlyWhy } from '../analysis/useGameAnalysis'
 import { gameAccuracy } from '../chess/accuracy'
 import { toWhitePov } from '../chess/score'
 import { lineToSan } from '../coach/facts'
@@ -8,7 +8,7 @@ import type { PositionAnalysis } from '../engine/uciInfo'
 import { buildLessons, categoryOf } from './lessons'
 import { patternOf } from '../puzzles/patterns'
 import { gamePhase } from './gamePhase'
-import type { GameReview, PlyReview } from './types'
+import { REVIEW_VERSION, type GameReview, type PlyReview } from './types'
 
 /**
  * Turn live analysis (engine results, ratings and notes) into a GameReview that can be
@@ -21,6 +21,8 @@ export function buildReview(
   ratings: PlyRating[],
   notes: PlyNote[],
   userColor: Color,
+  /** Reasons for good moves. Passed with both sides rated, which makes a current (version 2) review. */
+  whys?: PlyWhy[],
 ): GameReview {
   const evalOf = (fen: string) => {
     const top = results.get(fen)?.lines[0]
@@ -44,7 +46,7 @@ export function buildReview(
     }
 
     if (r === 'pending') complete = false
-    if (r && r !== 'pending' && m.color === userColor) {
+    if (r && r !== 'pending') {
       p.judgement = {
         rating: r.rating,
         bestUci: r.bestMove,
@@ -59,15 +61,23 @@ export function buildReview(
 
     const n = notes[i]
     if (n === 'pending') complete = false
-    if (n && n !== 'pending') p.note = { text: n.text, tip: n.tip, category: categoryOf(n.fact?.type), pattern: patternOf(n.fact) }
+    if (n && n !== 'pending') {
+      if (m.color === userColor) p.note = { text: n.text, tip: n.tip, category: categoryOf(n.fact?.type), pattern: patternOf(n.fact) }
+      else p.opponentNote = n.text
+    }
+    const w = whys?.[i]
+    if (w === 'pending') complete = false
+    if (w && w !== 'pending') p.why = w
     return p
   })
 
-  const judged = plies.flatMap((p) => (p.judgement ? [p.judgement] : []))
+  const judged = (color: Color) => plies.flatMap((p) => (p.judgement && p.color === color ? [p.judgement] : []))
+  const opponent: Color = userColor === 'w' ? 'b' : 'w'
   return {
     startEval: evalOf(startFen),
     plies,
-    accuracy: gameAccuracy(judged),
+    accuracy: gameAccuracy(judged(userColor)),
+    ...(whys ? { opponentAccuracy: gameAccuracy(judged(opponent)), version: REVIEW_VERSION } : {}),
     lessons: buildLessons(plies),
     complete,
   }

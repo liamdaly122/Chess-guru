@@ -43,11 +43,11 @@ async function tour(name, ctxOpts, browser) {
   await page.getByRole('button', { name: 'Settings' }).click(); await shot('settings'); await page.keyboard.press('Escape');
   await page.goto(BASE + '#/games'); await shot('games', true);
   await page.locator('.game-row').first().click(); await page.getByTestId('review-summary').waitFor();
-  await page.getByRole('button', { name: 'Next move' }).click(); await page.getByRole('button', { name: 'Next move' }).click();
-  await page.getByRole('button', { name: 'Next move' }).click(); await page.getByRole('button', { name: 'Next move' }).click();
-  await page.getByRole('button', { name: 'Next move' }).click(); await page.getByRole('button', { name: 'Next move' }).click();
-  await page.getByRole('button', { name: 'Next move' }).click();
+  await page.waitForFunction(() => !document.querySelector('[data-testid=analysing]'), null, { timeout: 120000 });
+  await shot('review-summary', true);
+  await page.getByTestId('start-review').click(); await page.getByTestId('review-pos').waitFor();
   await shot('review', true);
+  await page.getByRole('button', { name: 'Explore' }).click(); await page.waitForTimeout(2500); await shot('review-explore', false);
   await page.goto(BASE + '#/progress'); await shot('progress', true);
   await page.goto(BASE + '#/puzzles'); await page.getByTestId('puzzle-card').waitFor(); await shot('puzzles', true);
   await page.goto(BASE + '#/puzzles/mistakes'); await page.getByTestId('mistake-patterns').waitFor(); await shot('mistakes', true);

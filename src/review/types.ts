@@ -36,10 +36,14 @@ export interface PlyReview {
   fenAfter: string
   /** Engine evaluation of the position after the move, from White's point of view. */
   evalAfter: Score | null
-  /** Only for the user's moves. */
+  /** Both players' moves (version 2 reviews); only the user's in older reviews. */
   judgement?: PlyJudgement
   /** Only for the user's mistakes and blunders. `pattern` is a MistakePattern (puzzles/patterns.ts); older reviews lack it. */
   note?: { text: string; tip: string; category: LessonCategory; pattern?: string }
+  /** The user's brilliant, great and best moves: why the move was good. */
+  why?: string
+  /** The opponent's mistakes and blunders: what the move allowed, told from the user's side. */
+  opponentNote?: string
   /** Opening, middlegame or endgame (from the position before the move). Older reviews may lack it. */
   phase?: GamePhase
 }
@@ -62,8 +66,20 @@ export interface GameReview {
   plies: PlyReview[]
   /** Average move accuracy of the user's moves (0 to 100), Lichess formula. */
   accuracy: number | null
+  /** The same for the opponent's moves (version 2). */
+  opponentAccuracy?: number | null
+  /** 2: both sides rated, with reasons for good moves and the opponent's mistakes. Older reviews are 1 (unset). */
+  version?: number
   /** The two or three biggest lessons from the user's mistakes. */
   lessons: Lesson[]
   /** True once every position and note is done. */
   complete: boolean
+}
+
+/** Reviews older than this are analysed again when opened (and in the background). */
+export const REVIEW_VERSION = 2
+
+/** A finished review in the current format. */
+export function isCurrentReview(r: GameReview | undefined | null): r is GameReview {
+  return !!r?.complete && (r.version ?? 1) >= REVIEW_VERSION
 }

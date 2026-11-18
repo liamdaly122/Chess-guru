@@ -24,7 +24,7 @@ export function formatDate(ms: number): string {
 export function ratingCounts(g: GameRecord): Partial<Record<string, number>> {
   const counts: Partial<Record<string, number>> = {}
   for (const p of g.review?.plies ?? []) {
-    if (p.judgement) counts[p.judgement.rating] = (counts[p.judgement.rating] ?? 0) + 1
+    if (p.judgement && p.color === g.userColor) counts[p.judgement.rating] = (counts[p.judgement.rating] ?? 0) + 1
   }
   return counts
 }

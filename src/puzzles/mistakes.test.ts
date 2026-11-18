@@ -251,6 +251,12 @@ describe('only the mistakes that matter', () => {
     expect(p.gameId).toBe('g2') // latest shown
   })
 
+  it('takes the more precise pattern when an older game is re-analysed', () => {
+    const old = mistakePuzzlesFromGame(gameWith('g1', 100, [[60, 20, 'fork', 'p']]), 0)[0]
+    const redone = mistakePuzzlesFromGame(gameWith('g1', 100, [[60, 20, 'fork-knight', 'p']]), 0)[0]
+    expect(mergePuzzle({ ...old, box: 2 }, redone, 1000)).toMatchObject({ pattern: 'fork-knight', box: 2 })
+  })
+
   it('starts the puzzle again if you make the same mistake after practising it', () => {
     const first = { ...mistakePuzzlesFromGame(gameWith('g1', 100, [[60, 20, 'loose-piece', 'p']]), 0)[0], box: 3, attempts: 3, lastAt: 500, dueAt: 9000 }
     const again = mistakePuzzlesFromGame(gameWith('g2', 800, [[60, 20, 'loose-piece', 'p']]), 0)[0]

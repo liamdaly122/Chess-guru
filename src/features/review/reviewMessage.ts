@@ -1,6 +1,7 @@
-import type { Color } from 'chess.js'
+import { Chess, type Color } from 'chess.js'
 import { formatScore, type Score } from '../../chess/score'
 import type { GameReview } from '../../review/types'
+import { isMissedChance } from '../../review/keyMoments'
 import type { CoachMessage } from '../play/coachMessage'
 import { praiseText, RATING_VERDICT } from '../play/ratingText'
 
@@ -12,7 +13,8 @@ function evalInfo(white: Score | null): Pick<CoachMessage, 'evalText' | 'evalFav
 
 /**
  * What the coach says about the half-move shown in the review (-1 = the start position).
- * Same bubble as during play: rating, evaluation, note and tip.
+ * Same bubble as during play: rating, evaluation, why the move was good or bad, and a tip.
+ * Your opponent's mistakes are told from your side (what they let you do).
  */
 export function reviewMessage(
   review: GameReview,
@@ -25,32 +27,53 @@ export function reviewMessage(
     return {
       tone: 'neutral',
       text: review.complete
-        ? 'Step through the game with the arrows, or jump straight to a mistake from the summary.'
+        ? 'The starting position. Use Next to go through the key moments, or step through every move.'
         : 'Analysing your game. Ratings and notes appear as each move is checked.',
       ...evalInfo(review.startEval),
     }
   }
 
   const p = review.plies[ply]
+  const j = p.judgement
+  const extra = bookNote ? ` ${bookNote}` : ''
+
   if (p.color !== userColor) {
-    return { tone: 'neutral', title: `${p.san} by ${opponentName}`, text: "Your opponent's move.", ...evalInfo(p.evalAfter) }
+    if (p.fenAfter && new Chess(p.fenAfter).isCheckmate()) {
+      return { tone: 'neutral', title: `${p.san} by ${opponentName} is checkmate`, text: 'The game ends here.', ...evalInfo(p.evalAfter) }
+    }
+    if (!j) return { tone: 'neutral', title: `${p.san} by ${opponentName}`, text: "Your opponent's move.", ...evalInfo(p.evalAfter) }
+    const bad = j.rating === 'mistake' || j.rating === 'blunder'
+    return {
+      tone: 'neutral',
+      badge: j.rating,
+      title: `${p.san} by ${opponentName} ${RATING_VERDICT[j.rating]}`,
+      text: bad
+        ? (p.opponentNote ?? 'This gives you a chance.') + extra
+        : j.rating === 'book'
+          ? `Known opening theory.${extra}`
+          : `Your opponent's move.${extra}`,
+      ...evalInfo(p.evalAfter),
+    }
   }
 
-  const j = p.judgement
   if (!j) return { tone: 'pending', badge: 'pending', text: `Checking ${p.san}…` }
 
-  const title = `${p.san} ${RATING_VERDICT[j.rating]}`
-  const extra = bookNote ? ` ${bookNote}` : ''
+  const miss = isMissedChance(review, ply, userColor)
+  const mate = !!p.fenAfter && new Chess(p.fenAfter).isCheckmate()
+  const title = miss ? `${p.san} misses a chance` : mate ? `${p.san} is checkmate` : `${p.san} ${RATING_VERDICT[j.rating]}`
+  const best = j.bestSan && j.bestUci !== p.uci ? j.bestSan : null
   if ((j.rating === 'mistake' || j.rating === 'blunder') && p.note) {
-    const best = j.bestSan && !p.note.text.includes(j.bestSan) ? ` The best move was ${j.bestSan}.` : ''
+    const bestLine = best && !p.note.text.includes(best) ? ` The best move was ${best}.` : ''
+    return { tone: j.rating, badge: j.rating, title, text: p.note.text + bestLine + extra, tip: p.note.tip, ...evalInfo(p.evalAfter) }
+  }
+  if (miss) {
     return {
       tone: j.rating,
       badge: j.rating,
       title,
-      text: p.note.text + best + extra,
-      tip: p.note.tip,
+      text: `Your opponent had just made a mistake.${best ? ` ${best} was the way to punish it.` : ''}${extra}`,
       ...evalInfo(p.evalAfter),
     }
   }
-  return { tone: j.rating, badge: j.rating, title, text: praiseText(j.rating, j.bestSan) + extra, ...evalInfo(p.evalAfter) }
+  return { tone: j.rating, badge: j.rating, title, text: (mate ? 'Well done: you win the game.' : (p.why ?? praiseText(j.rating, best))) + extra, ...evalInfo(p.evalAfter) }
 }

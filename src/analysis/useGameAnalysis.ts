@@ -2,7 +2,8 @@ import type { Color, Move } from 'chess.js'
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { buildFacts } from '../coach/facts'
 import { buildHint, type Hint } from '../coach/hints'
-import { writeNote, type CoachNote } from '../coach/notes'
+import { writeNote, writeOpponentNote, type CoachNote } from '../coach/notes'
+import { goodFacts, writeWhy } from '../coach/goodMoves'
 import { classifyMove, type MoveJudgement } from '../chess/classify'
 import { toWhitePov, type Score } from '../chess/score'
 import { COACH } from '../config/coach'
@@ -19,6 +20,11 @@ export type PlyRating = MoveJudgement | 'pending' | null
 
 /** Per half-move coaching note: only for mistakes and blunders. */
 export type PlyNote = CoachNote | 'pending' | null
+
+/** Per half-move "why it was good", for brilliant, great and best moves of the rated colour. */
+export type PlyWhy = string | 'pending' | null
+
+const WHY_RATINGS: readonly string[] = ['brilliant', 'great', 'best']
 
 const NOTE_RATINGS: readonly string[] = COACH.noteRatings
 
@@ -37,14 +43,15 @@ function sacrificeOf(m: Move): number {
 
 /**
  * Runs the full-strength analyser over every position in `positions`, rates the moves played
- * by `ratedColor`, writes coaching notes for their mistakes and blunders, and builds a hint
- * for the current position.
+ * by `ratedColor` (both sides with `rateBoth`, for reviews), writes coaching notes for their
+ * mistakes and blunders (the other side's in its own wording), explains good moves, and builds
+ * a hint for the current position.
  */
 export function useGameAnalysis(
   positions: string[],
   history: Move[],
   ratedColor: Color,
-  { enabled = true, bookPlies }: { enabled?: boolean; bookPlies?: boolean[] } = {},
+  { enabled = true, bookPlies, rateBoth = false }: { enabled?: boolean; bookPlies?: boolean[]; rateBoth?: boolean } = {},
 ) {
   const [queue, setQueue] = useState<AnalysisQueue | null>(null)
 
@@ -69,7 +76,7 @@ export function useGameAnalysis(
   const ratings = useMemo<PlyRating[]>(
     () =>
       history.map((m, i) => {
-        if (m.color !== ratedColor) return null
+        if (m.color !== ratedColor && !rateBoth) return null
         const before = snapshot.results.get(m.before)
         const after = snapshot.results.get(m.after)
         if (!before || !after) return 'pending'
@@ -77,7 +84,7 @@ export function useGameAnalysis(
         // Known opening theory is shown as a book move rather than judged by the engine.
         return j && bookPlies?.[i] ? { ...j, rating: 'book' as const } : j
       }),
-    [history, ratedColor, snapshot.results, bookPlies],
+    [history, ratedColor, rateBoth, snapshot.results, bookPlies],
   )
 
   // Mistakes and blunders need the null-move position analysed too, to find ignored threats.
@@ -112,9 +119,21 @@ export function useGameAnalysis(
           after: snapshot.results.get(m.after)!,
           nullMove,
         })
-        return writeNote(facts, m.color)
+        return m.color === ratedColor ? writeNote(facts, m.color) : writeOpponentNote(facts)
       }),
-    [history, ratings, nullFens, snapshot.results],
+    [history, ratings, nullFens, snapshot.results, ratedColor],
+  )
+
+  const whys = useMemo<PlyWhy[]>(
+    () =>
+      history.map((m, i) => {
+        const r = ratings[i]
+        if (m.color !== ratedColor || !r) return null
+        if (r === 'pending') return 'pending'
+        if (!WHY_RATINGS.includes(r.rating)) return null
+        return writeWhy(goodFacts(m, r, snapshot.results.get(m.before)!, sacrificeOf(m)))
+      }),
+    [history, ratings, ratedColor, snapshot.results],
   )
 
   const currentFen = positions[positions.length - 1]
@@ -123,7 +142,7 @@ export function useGameAnalysis(
     return a ? buildHint(a) : null
   }, [snapshot.results, currentFen])
 
-  return { snapshot, ratings, notes, hint }
+  return { snapshot, ratings, notes, whys, hint }
 }
 
 /**

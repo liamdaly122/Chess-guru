@@ -4,7 +4,7 @@ import { useGameAnalysis } from '../../analysis/useGameAnalysis'
 import { parseUci } from '../../chess/moves'
 import { useOpeningBook } from '../../openings/useOpeningBook'
 import { buildReview } from '../../review/buildReview'
-import type { GameReview } from '../../review/types'
+import { isCurrentReview, type GameReview } from '../../review/types'
 import { saveGame } from '../../storage/games'
 import type { GameRecord } from '../../storage/types'
 
@@ -26,18 +26,20 @@ export function useGameReview(game: GameRecord) {
     [history, game.startFen],
   )
 
-  const stored = game.review?.complete ? game.review : null
+  // Reviews from before both sides were rated are analysed again (version 2).
+  const stored = isCurrentReview(game.review) ? game.review : null
   const openingInfo = useOpeningBook(positions)
   const analysis = useGameAnalysis(positions, history, game.userColor, {
     enabled: !stored,
     bookPlies: openingInfo?.status.inBook,
+    rateBoth: true,
   })
   const live = useMemo<GameReview | null>(
     () =>
       stored
         ? null
-        : buildReview(history, positions[0], analysis.snapshot.results, analysis.ratings, analysis.notes, game.userColor),
-    [stored, history, positions, analysis.snapshot.results, analysis.ratings, analysis.notes, game.userColor],
+        : buildReview(history, positions[0], analysis.snapshot.results, analysis.ratings, analysis.notes, game.userColor, analysis.whys),
+    [stored, history, positions, analysis.snapshot.results, analysis.ratings, analysis.notes, analysis.whys, game.userColor],
   )
 
   // Save once the engine has finished. Wait for the opening book too, so book moves are stored as such.

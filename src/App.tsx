@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { routeHref, useRoute, type Route } from './app/route'
 import { GamesScreen } from './features/games/GamesScreen'
 import { PlayScreen } from './features/play/PlayScreen'
@@ -11,6 +12,7 @@ import { NewGamesBanner } from './features/games/NewGamesBanner'
 import { GoalMessage } from './features/goal/GoalMessage'
 import { BackgroundReviewer } from './features/review/BackgroundReviewer'
 import { useAutoLichessCheck } from './lichess/autoSync'
+import { queueReviewUpgrades } from './review/upgrades'
 
 const TABS: { route: Route; label: string; icon: typeof BoardIcon }[] = [
   { route: { name: 'play' }, label: 'Play', icon: BoardIcon },
@@ -22,6 +24,9 @@ const TABS: { route: Route; label: string; icon: typeof BoardIcon }[] = [
 export default function App() {
   const route = useRoute()
   useAutoLichessCheck()
+  useEffect(() => {
+    void queueReviewUpgrades()
+  }, [])
   const tab = route.name === 'review' ? 'games' : route.name
 
   return (

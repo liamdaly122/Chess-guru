@@ -37,9 +37,19 @@ export function PlayScreen() {
   const [holdBot, setHoldBot] = useState(false)
   const play = usePlayGame({ holdBot })
   const openingInfo = useOpeningBook(play.positions)
+  // Both sides are rated so the saved review is complete straight away; the screen shows only yours.
   const analysis = useGameAnalysis(play.positions, play.history, play.userColor, {
     bookPlies: openingInfo?.status.inBook,
+    rateBoth: true,
   })
+  const userRatings = useMemo(
+    () => analysis.ratings.map((r, i) => (play.history[i]?.color === play.userColor ? r : null)),
+    [analysis.ratings, play.history, play.userColor],
+  )
+  const userNotes = useMemo(
+    () => analysis.notes.map((n, i) => (play.history[i]?.color === play.userColor ? n : null)),
+    [analysis.notes, play.history, play.userColor],
+  )
   const saver = useSaveBotGame(play, analysis, openingInfo?.status.opening ?? null)
 
   // With live coaching on, let the rating of your move appear before the bot replies,
@@ -91,7 +101,7 @@ export function PlayScreen() {
           label: findLevel(adaptiveRating).label,
           change: adaptiveRating > play.level.rating ? 'up' : adaptiveRating < play.level.rating ? 'down' : 'same',
         }
-  const main = play.status.over ? mainPattern(analysis.notes) : null
+  const main = play.status.over ? mainPattern(userNotes) : null
   const mainMistake = main
     ? { label: PATTERNS[main.pattern].label, count: main.count, href: routeHref({ name: 'puzzles', theme: MISTAKE_PATTERN_PREFIX + main.pattern }) }
     : null
@@ -101,7 +111,7 @@ export function PlayScreen() {
   }, [adaptiveRating, play.uid])
 
   // Badge on the square your last move landed on, until your next move (hidden if the bot captured it).
-  const badge = showRatings ? lastUserBadge(play.history, analysis.ratings, play.userColor, play.game) : null
+  const badge = showRatings ? lastUserBadge(play.history, userRatings, play.userColor, play.game) : null
 
   const hint = prefs.hintMode && play.isUserTurn ? analysis.hint : null
   const glowSquare = hint && hintStep === 2 ? hint.pieceSquare : null
@@ -129,14 +139,14 @@ export function PlayScreen() {
 
   const showGameOver = play.status.over && dismissedGameOver !== play.history.length
   const evalScore = latestEval(analysis.snapshot, play.positions)
-  const badgeRatings = analysis.ratings.map((r) => (r && r !== 'pending' ? r.rating : r))
+  const badgeRatings = userRatings.map((r) => (r && r !== 'pending' ? r.rating : r))
   const bookNote = showRatings
     ? leftBookNote(openingInfo, play.history, lastUserPly(play.history, play.userColor), play.userColor)
     : null
   const coachInput = {
     history: play.history,
-    ratings: analysis.ratings,
-    notes: analysis.notes,
+    ratings: userRatings,
+    notes: userNotes,
     liveCoaching: prefs.liveCoaching,
     gameOver,
     resultText: play.status.over ? resultText(play.status, play.userColor) : undefined,
@@ -248,8 +258,8 @@ export function PlayScreen() {
         <CoachCard
           className={gameOver ? '' : 'desktop-only'}
           history={play.history}
-          ratings={analysis.ratings}
-          notes={analysis.notes}
+          ratings={userRatings}
+          notes={userNotes}
           message={coachBeside}
           gameOver={gameOver}
           hintMode={prefs.hintMode}

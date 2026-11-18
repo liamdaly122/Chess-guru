@@ -8,7 +8,7 @@ import type { LessonCategory } from '../review/types'
 import { opponentOf } from '../storage/gameInfo'
 import { positionKey } from '../openings/book'
 import { dayKey } from '../goal/streak'
-import { isPattern, patternFromCategory, PATTERNS, type MistakePattern } from './patterns'
+import { isBroadPattern, isPattern, patternFromCategory, PATTERNS, type MistakePattern } from './patterns'
 import type { GameRecord } from '../storage/types'
 import { masteredBox, nextSchedule, type PuzzleResult } from '../training/srs'
 
@@ -138,7 +138,12 @@ export function mergePuzzle(stored: MistakePuzzle | undefined, fresh: MistakePuz
   if (!stored) return fresh
   const have = new Set(stored.occurrences.map(occKey))
   const added = fresh.occurrences.filter((o) => !have.has(occKey(o)))
-  if (added.length === 0) return stored
+  if (added.length === 0) {
+    // A re-analysed game can name the pattern more precisely (a fork becomes a knight fork).
+    return isBroadPattern(stored.pattern) && fresh.pattern !== stored.pattern && !isBroadPattern(fresh.pattern)
+      ? { ...stored, pattern: fresh.pattern, note: fresh.note, tip: fresh.tip }
+      : stored
+  }
   const occurrences = [...stored.occurrences, ...added].sort((a, b) => a.gameDate - b.gameDate || a.ply - b.ply)
   const newest = occurrences[occurrences.length - 1]
   const madeAgain = added.some((o) => o.gameDate > (stored.lastAt ?? stored.createdAt))
@@ -290,7 +295,7 @@ export type AttemptCheck =
   | { verdict: 'needs-engine'; fenAfter: string }
 
 /** First check of a move: the engine's move or any checkmate is correct; anything else needs the engine. */
-export function checkAttempt(p: MistakePuzzle, uci: string): AttemptCheck {
+export function checkAttempt(p: Pick<MistakePuzzle, 'fen' | 'solution'>, uci: string): AttemptCheck {
   if (uci === p.solution) return { verdict: 'correct' }
   const chess = new Chess(p.fen)
   try {
@@ -306,7 +311,7 @@ export function checkAttempt(p: MistakePuzzle, uci: string): AttemptCheck {
  * Is a different move just as good? Compare your winning chances after it (from the engine's
  * analysis of the position after your move, where the opponent is to move) with the best move's.
  */
-export function isGoodAlternative(p: MistakePuzzle, after: PositionAnalysis, tolerance = MISTAKE_PUZZLES.alternativeTolerance): boolean {
+export function isGoodAlternative(p: Pick<MistakePuzzle, 'winBest'>, after: PositionAnalysis, tolerance = MISTAKE_PUZZLES.alternativeTolerance): boolean {
   const top = after.lines[0]
   if (!top) return false
   const yourWin = winPercent(negate(top.score))

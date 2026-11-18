@@ -1,61 +1,123 @@
+import type { Color } from 'chess.js'
 import type { MoveRating } from '../../chess/classify'
+import { gameVerdict, moveName, phaseGrade, phaseScores, type KeyMoment } from '../../review/keyMoments'
+import { MOMENT_LABEL, momentRating } from './moments'
+import { PHASE_LABEL } from '../../review/gamePhase'
 import type { GameReview } from '../../review/types'
-import { opponentOf, outcomeOf } from '../../storage/gameInfo'
+import { opponentOf } from '../../storage/gameInfo'
 import type { GameRecord } from '../../storage/types'
+import { CoachBubble } from '../play/CoachBubble'
 import { RatingBadge } from '../play/RatingBadge'
-import { countLabel } from '../play/ratingText'
+import { RATING_LABEL } from '../play/ratingText'
 
-const ORDER: MoveRating[] = ['book', 'brilliant', 'great', 'best', 'good', 'inaccuracy', 'mistake', 'blunder']
+const ORDER: MoveRating[] = ['brilliant', 'great', 'best', 'good', 'book', 'inaccuracy', 'mistake', 'blunder']
 
 interface Props {
   game: GameRecord
   review: GameReview
+  moments: KeyMoment[]
+  onStart: () => void
   onJump: (ply: number) => void
 }
 
-function resultLine(game: GameRecord): string {
-  const o = outcomeOf(game)
-  const opp = opponentOf(game).name
-  const how = game.termination === 'checkmate' ? 'by checkmate' : game.termination ? `by ${game.termination}` : ''
-  if (o === 'win') return `You beat ${opp} ${how}`.trim()
-  if (o === 'loss') return `You lost to ${opp} ${how}`.trim()
-  if (o === 'draw') return `Draw with ${opp} ${how}`.trim()
-  return `Unfinished game against ${opp}`
+function count(review: GameReview, color: Color, rating: MoveRating): number {
+  return review.plies.filter((p) => p.color === color && p.judgement?.rating === rating).length
 }
 
-/** End-of-game summary: result, accuracy, rating counts and the biggest lessons. */
-export function ReviewSummary({ game, review, onJump }: Props) {
-  const counts = ORDER.map(
-    (r) => [r, review.plies.filter((p) => p.judgement?.rating === r).length] as const,
-  ).filter(([, n]) => n > 0)
+/**
+ * The first screen of a review, like Chess.com's Game Review: the coach's verdict, a Start
+ * button, both players' accuracy and ratings, how you did in each phase, the key moments and
+ * the biggest lessons.
+ */
+export function ReviewSummary({ game, review, moments, onStart, onJump }: Props) {
+  const opp = opponentOf(game)
+  const them: Color = game.userColor === 'w' ? 'b' : 'w'
+  const rows = ORDER.map((r) => ({ r, you: count(review, game.userColor, r), opp: count(review, them, r) })).filter((x) => x.you || x.opp)
+  const phases = phaseScores(review, game.userColor)
 
   return (
-    <section className="card summary-card" aria-label="Game summary" data-testid="review-summary">
-      <div className="summary-top">
-        <div>
-          <h2 className="card-title">Summary</h2>
-          <p className="summary-result">{resultLine(game)}.</p>
-          {game.takebacks ? <p className="muted small">Played with {game.takebacks} takeback{game.takebacks > 1 ? 's' : ''}.</p> : null}
-          {counts.length > 0 && (
-            <ul className="summary-counts">
-              {counts.map(([r, n]) => (
-                <li key={r}>
-                  <RatingBadge rating={r} size="sm" />
-                  <span>{countLabel(r, n)}</span>
-                </li>
+    <div className="review-overview" data-testid="review-summary">
+      <CoachBubble message={{ tone: 'neutral', text: review.complete ? gameVerdict(game, review, moments) : 'Analysing your game…' }} />
+      <button type="button" className="primary wide start-review" onClick={onStart} disabled={!review.complete || moments.length === 0} data-testid="start-review">
+        {moments.length ? `Start review · ${moments.length} key moment${moments.length === 1 ? '' : 's'}` : 'Start review'}
+      </button>
+
+      <section className="card players-card" aria-label="Accuracy">
+        <div className="player-acc">
+          <span className="player-acc-name">You</span>
+          <span className="accuracy">
+            <span className="accuracy-num">{review.accuracy == null ? '–' : Math.round(review.accuracy)}</span>
+            <span className="accuracy-label">accuracy</span>
+          </span>
+        </div>
+        <span className="players-vs muted">vs</span>
+        <div className="player-acc">
+          <span className="player-acc-name">{opp.name}</span>
+          <span className="accuracy opponent">
+            <span className="accuracy-num">{review.opponentAccuracy == null ? '–' : Math.round(review.opponentAccuracy)}</span>
+            <span className="accuracy-label">accuracy</span>
+          </span>
+        </div>
+      </section>
+
+      {rows.length > 0 && (
+        <section className="card" aria-label="Move ratings">
+          <table className="ratings-table">
+            <thead>
+              <tr>
+                <th />
+                <th>You</th>
+                <th>{opp.name}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(({ r, you, opp: o }) => (
+                <tr key={r} className={`row-${r}`}>
+                  <td>
+                    <RatingBadge rating={r} size="sm" /> {RATING_LABEL[r]}
+                  </td>
+                  <td>{you}</td>
+                  <td>{o}</td>
+                </tr>
               ))}
-            </ul>
-          )}
-        </div>
-        <div className="accuracy" aria-label="Accuracy">
-          <span className="accuracy-num">{review.accuracy == null ? '…' : Math.round(review.accuracy)}</span>
-          <span className="accuracy-label">accuracy</span>
-        </div>
-      </div>
+            </tbody>
+          </table>
+        </section>
+      )}
+
+      <section className="card phases-card" aria-label="Game phases">
+        {phases.map((p) => (
+          <div key={p.phase} className={`phase-score grade-${phaseGrade(p.accuracy).replace(/\W+/g, '-').toLowerCase()}`}>
+            <span className="tile-label">{PHASE_LABEL[p.phase]}</span>
+            <span className="phase-grade">{phaseGrade(p.accuracy)}</span>
+            <span className="muted small">{p.accuracy == null ? 'no moves' : `${Math.round(p.accuracy)}%`}</span>
+          </div>
+        ))}
+      </section>
+
+      {moments.length > 0 && (
+        <section className="card" aria-label="Key moments">
+          <h2 className="card-title">Key moments</h2>
+          <ul className="moment-list">
+            {moments.map((m) => {
+              const r = momentRating(review, m)
+              return (
+                <li key={m.ply}>
+                  <button type="button" className="moment-button" onClick={() => onJump(m.ply)}>
+                    {r && <RatingBadge rating={r} size="sm" />}
+                    <span className="moment-move">{moveName(review, m.ply)}</span>
+                    <span className="muted small">{MOMENT_LABEL[m.kind]}</span>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      )}
 
       {review.complete && (
-        <div className="lessons">
-          <h3>{review.lessons.length > 0 ? 'Biggest lessons' : 'Lessons'}</h3>
+        <section className="card lessons" aria-label="Lessons">
+          <h2 className="card-title">{review.lessons.length > 0 ? 'Biggest lessons' : 'Lessons'}</h2>
           {review.lessons.length === 0 ? (
             <p className="coach-text">No mistakes or blunders in this game. Well played!</p>
           ) : (
@@ -70,8 +132,7 @@ export function ReviewSummary({ game, review, onJump }: Props) {
                   <div className="lesson-jumps">
                     {l.plies.slice(0, 4).map((ply) => (
                       <button key={ply} type="button" className="chip" onClick={() => onJump(ply)}>
-                        {Math.floor(ply / 2) + 1}
-                        {review.plies[ply].color === 'w' ? '.' : '...'} {review.plies[ply].san}
+                        {moveName(review, ply)}
                       </button>
                     ))}
                   </div>
@@ -79,8 +140,8 @@ export function ReviewSummary({ game, review, onJump }: Props) {
               ))}
             </ol>
           )}
-        </div>
+        </section>
       )}
-    </section>
+    </div>
   )
 }

@@ -47,8 +47,8 @@ export function useSaveBotGame(play: Play, analysis: Analysis, opening: Opening 
 
   const makeReview = useCallback(
     () =>
-      buildReview(play.history, startFen, analysis.snapshot.results, analysis.ratings, analysis.notes, play.userColor),
-    [play.history, startFen, analysis.snapshot.results, analysis.ratings, analysis.notes, play.userColor],
+      buildReview(play.history, startFen, analysis.snapshot.results, analysis.ratings, analysis.notes, play.userColor, analysis.whys),
+    [play.history, startFen, analysis.snapshot.results, analysis.ratings, analysis.notes, analysis.whys, play.userColor],
   )
 
   const review = useMemo(

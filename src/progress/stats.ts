@@ -68,7 +68,8 @@ export function progressStats(games: GameRecord[], { recentWindow = 10, rollingW
   for (const g of reviewed) {
     g.review!.plies.forEach((p, i) => {
       const j = p.judgement
-      if (!j || j.rating === 'book') return
+      // Newer reviews rate both players: only your own moves count here.
+      if (!j || j.rating === 'book' || p.color !== g.userColor) return
       const ph = p.phase ?? gamePhase(p.fenBefore, i)
       const lost = Math.max(0, j.winBefore - j.winAfter)
       const s = phase.get(ph)!

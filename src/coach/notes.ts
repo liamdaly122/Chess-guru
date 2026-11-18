@@ -87,6 +87,52 @@ export function writeNote(facts: CoachFacts, mover: Color): CoachNote {
   }
 }
 
+/**
+ * Your opponent's mistake, told from your side: what it lets you do. The facts are built for
+ * the opponent's move as usual ("you" there is the opponent), so the wording swaps sides.
+ */
+export function writeOpponentNote(facts: CoachFacts): CoachNote {
+  const fact = facts.facts[0]
+  const reply = facts.replyLineSan[0]
+  const best = reply ? ` The best reply is ${reply}.` : ''
+  if (!fact) {
+    return {
+      text: `This drops their winning chances from ${Math.round(facts.winBefore)}% to ${Math.round(facts.winAfter)}%.${best}`,
+      tip: '',
+    }
+  }
+  switch (fact.type) {
+    case 'allowed-mate':
+      return { fact, text: `This lets you force checkmate in ${fact.mateIn}, starting with ${fact.replySan}.`, tip: '' }
+    case 'missed-mate':
+      return { fact, text: `They had a forced mate with ${fact.bestSan} and missed it.${best}`, tip: '' }
+    case 'piece-lost':
+      return {
+        fact,
+        text: `This leaves their ${PIECE_NAME[fact.piece.type]} on ${fact.piece.square} ${fact.piece.defenders === 0 ? 'undefended' : 'not defended enough'}: you can win it with ${fact.captureSan}.`,
+        tip: '',
+      }
+    case 'allowed-fork':
+      return { fact, text: `This lets you play ${fact.replySan}, forking their ${list(fact.targets)}.`, tip: '' }
+    case 'allowed-line':
+      return {
+        fact,
+        text: `This lets you play ${fact.replySan}, ${fact.tactic.kind === 'pin' ? 'pinning' : 'skewering'} their ${PIECE_NAME[fact.tactic.front.type]}.`,
+        tip: '',
+      }
+    case 'threat-ignored':
+      return { fact, text: `This ignores your threat: ${fact.threatSan} now works.`, tip: '' }
+    case 'missed-capture':
+      return { fact, text: `They missed ${fact.bestSan}, which wins your ${PIECE_NAME[fact.piece.type]} on ${fact.piece.square}.${best}`, tip: '' }
+    case 'missed-fork':
+      return { fact, text: `They missed ${fact.bestSan}, a fork of your ${list(fact.targets)}.${best}`, tip: '' }
+    case 'missed-line':
+      return { fact, text: `They missed ${fact.bestSan}, which ${fact.tactic.kind === 'pin' ? 'pins' : 'skewers'} your ${PIECE_NAME[fact.tactic.front.type]}.${best}`, tip: '' }
+    case 'left-hanging':
+      return { fact, text: `This leaves their ${PIECE_NAME[fact.piece.type]} on ${fact.piece.square} loose.${best}`, tip: '' }
+  }
+}
+
 function generalNote(facts: CoachFacts): CoachNote {
   const idea = facts.bestLineSan.slice(0, 3).join(' ')
   const best = facts.bestSan ? `The engine preferred ${facts.bestSan}${idea ? ` (${idea})` : ''}, and this` : 'This'
