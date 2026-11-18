@@ -100,7 +100,7 @@ export function PlayScreen() {
   const bookNote = showRatings
     ? leftBookNote(openingInfo, play.history, lastUserPly(play.history, play.userColor), play.userColor)
     : null
-  const coach = coachMessage({
+  const coachInput = {
     history: play.history,
     ratings: analysis.ratings,
     notes: analysis.notes,
@@ -111,7 +111,10 @@ export function PlayScreen() {
     hintStep,
     botNote: maiaNote,
     bookNote,
-  })
+  }
+  const coach = coachMessage(coachInput)
+  // Beside the board the hint card lists the hint steps, so the bubble keeps the move rating.
+  const coachBeside = coachMessage({ ...coachInput, hint: null, hintStep: 0 })
 
   return (
     <div className="play-screen">
@@ -212,14 +215,13 @@ export function PlayScreen() {
           history={play.history}
           ratings={analysis.ratings}
           notes={analysis.notes}
-          liveCoaching={prefs.liveCoaching}
+          message={coachBeside}
           gameOver={gameOver}
           hintMode={prefs.hintMode}
           isUserTurn={play.isUserTurn}
           hint={analysis.hint}
           hintStep={hintStep}
           onHint={nextHint}
-          bookNote={bookNote}
         />
 
         <OpeningPanel

@@ -45,7 +45,11 @@ describe('coachMessage', () => {
       ratings: [judgement('mistake'), null],
       notes: [{ text: 'This leaves your pawn loose.', tip: 'Check your pieces.' }, null],
     })
-    expect(m).toMatchObject({ tone: 'mistake', text: 'This leaves your pawn loose.', tip: 'Check your pieces.' })
+    expect(m).toMatchObject({
+      tone: 'mistake',
+      text: 'This leaves your pawn loose. The best move was d4.',
+      tip: 'Check your pieces.',
+    })
   })
 
   it('shows a hint step ahead of the move rating', () => {

@@ -32,3 +32,6 @@ public/ort/
 .env
 .env.*
 !.env.example
+
+# Screenshots from npm run ui:tour
+ui-shots/

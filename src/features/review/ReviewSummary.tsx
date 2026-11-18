@@ -36,25 +36,22 @@ export function ReviewSummary({ game, review, onJump }: Props) {
           <h2 className="card-title">Summary</h2>
           <p className="summary-result">{resultLine(game)}.</p>
           {game.takebacks ? <p className="muted small">Played with {game.takebacks} takeback{game.takebacks > 1 ? 's' : ''}.</p> : null}
+          {counts.length > 0 && (
+            <ul className="summary-counts">
+              {counts.map(([r, n]) => (
+                <li key={r}>
+                  <RatingBadge rating={r} size="sm" />
+                  <span>{countLabel(r, n)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
         <div className="accuracy" aria-label="Accuracy">
           <span className="accuracy-num">{review.accuracy == null ? '…' : Math.round(review.accuracy)}</span>
           <span className="accuracy-label">accuracy</span>
         </div>
       </div>
-
-      {counts.length > 0 && (
-        <ul className="summary-counts">
-          {counts.map(([r, n]) => (
-            <li key={r}>
-              <RatingBadge rating={r} size="sm" />
-              <span>
-                {countLabel(r, n)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
 
       {review.complete && (
         <div className="lessons">
@@ -67,9 +64,8 @@ export function ReviewSummary({ game, review, onJump }: Props) {
                 <li key={l.category}>
                   <p className="lesson-title">{l.title}</p>
                   <p className="coach-text">{l.text}</p>
-                  <p className="coach-tip">
-                    <span className="tip-label">Next time</span>
-                    {l.tip}
+                  <p className="lesson-tip">
+                    <strong>Next time:</strong> {l.tip}
                   </p>
                   <div className="lesson-jumps">
                     {l.plies.slice(0, 4).map((ply) => (

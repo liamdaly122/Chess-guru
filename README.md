@@ -19,6 +19,8 @@ Then open http://localhost:5173.
 
 Run the unit tests with `npm test`.
 
+To check the look of every page, keep `npm run dev` running and run `npm run ui:tour` in another terminal. It saves phone and desktop screenshots in `ui-shots/` (needs Playwright with Chromium installed).
+
 The app is a static site and is hosted on Vercel, which builds it from this GitHub repo on every push (settings in `vercel.json`).
 
 ### Install it on your phone

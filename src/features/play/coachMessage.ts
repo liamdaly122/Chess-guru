@@ -89,13 +89,15 @@ export function coachMessage(input: CoachInput): CoachMessage {
     evalFavours: (white.kind === 'cp' ? white.cp >= 0 : white.forUs) ? ('w' as const) : ('b' as const),
   }
   const note = notes[ply]
+  const best = r.bestMove ? uciToSan(move.before, r.bestMove) : null
   if (r.rating === 'mistake' || r.rating === 'blunder') {
     if (!note || note === 'pending') {
       return { tone: r.rating, badge: r.rating, title, text: 'Working out what went wrong…', ...evalInfo }
     }
-    return { tone: r.rating, badge: r.rating, title, text: note.text, tip: note.tip, ...evalInfo }
+    // Name the better move unless the note already does.
+    const bestLine = best && !note.text.includes(best) ? ` The best move was ${best}.` : ''
+    return { tone: r.rating, badge: r.rating, title, text: note.text + bestLine, tip: note.tip, ...evalInfo }
   }
-  const best = r.bestMove ? uciToSan(move.before, r.bestMove) : null
   const text = [praiseText(r.rating, best), input.bookNote].filter(Boolean).join(' ')
   return { tone: r.rating, badge: r.rating, title, text, ...evalInfo }
 }

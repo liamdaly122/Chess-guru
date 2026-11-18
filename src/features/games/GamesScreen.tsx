@@ -89,11 +89,11 @@ function GameRow({ game }: { game: GameRecord }) {
               formatDate(game.endedAt),
               game.speed,
               `${Math.ceil(game.moves.length / 2)} move${Math.ceil(game.moves.length / 2) === 1 ? '' : 's'}`,
-              game.opening,
             ]
               .filter(Boolean)
               .join(' · ')}
           </span>
+          {game.opening && <span className="game-row-opening muted">{game.opening}</span>}
         </span>
         <span className="game-row-stats">
           {reviewed && game.review?.accuracy != null ? (
@@ -228,8 +228,8 @@ function BackupCard({ gameCount }: { gameCount: number }) {
     <section className={`card backup-card ${overdue ? 'overdue' : ''}`} aria-label="Backup" data-testid="backup-card">
       <h2 className="card-title">Backup</h2>
       <p className="muted small">
-        Your games and puzzle progress are stored only on this device. Deleting the app or clearing website data
-        removes them, so keep a backup in iCloud Drive (or Google Drive).
+        Your games and puzzle progress live only on this device. Keep a backup in iCloud Drive in case the app is
+        deleted or the phone is replaced.
       </p>
       <p className={`backup-status ${overdue ? 'warn' : ''}`} data-testid="backup-status">
         {lastBackupAt == null
@@ -241,15 +241,15 @@ function BackupCard({ gameCount }: { gameCount: number }) {
             : `Last backup: ${daysSince} day${daysSince === 1 ? '' : 's'} ago.`}
         {overdue && lastBackupAt != null && ' Time for a new one.'}
       </p>
-      <div className="backup-buttons">
-        <button type="button" className={overdue ? 'primary' : ''} onClick={() => void backUp()}>
-          Back up to Files / iCloud
-        </button>
+      <button type="button" className="primary wide" onClick={() => void backUp()}>
+        Back up to Files / iCloud
+      </button>
+      <div className="backup-secondary">
         <button type="button" onClick={() => fileRef.current?.click()}>
-          Restore backup
+          Restore
         </button>
         <button type="button" onClick={async () => downloadText(`chess-guru-games-${stamp()}.pgn`, await exportAllPgn(), 'application/x-chess-pgn')}>
-          All games as PGN
+          Games as PGN
         </button>
       </div>
       <input

@@ -2921,3 +2921,201 @@ a.chip.active {
   text-decoration: none;
   font-size: 0.9rem;
 }
+
+/* ============================================================
+   UI tidy: consistent coach panel, review and phone layout
+   ============================================================ */
+
+.coach-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card.hint-box {
+  margin-top: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.game-summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Review */
+.review-screen .board-area {
+  gap: 10px;
+}
+
+.review-nav {
+  grid-template-columns: 44px 44px 1fr 44px 44px auto 44px;
+}
+
+.review-nav .best-toggle {
+  height: 100%;
+  padding: 0 12px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.summary-top .summary-counts {
+  margin-top: 10px;
+}
+
+.review-nav .best-toggle.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.lessons ol {
+  gap: 16px;
+}
+
+.lessons li {
+  gap: 4px;
+}
+
+.lesson-tip {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.lesson-tip strong {
+  color: var(--accent);
+}
+
+/* Tappable move strip (review) */
+.move-strip {
+  position: relative;
+}
+
+.strip-button {
+  min-height: 0;
+  padding: 0 2px;
+  border: none;
+  border-radius: 5px;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+}
+
+.move-strip li.last .strip-button {
+  padding: 0 5px;
+  background: var(--accent-soft);
+}
+
+.move-strip li.last .strip-san.strip-button {
+  margin: 0;
+}
+
+/* Games list */
+.game-row-opening {
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.backup-secondary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+@media (max-width: 700px) {
+  /* No logo bar on any page: the bottom tabs show where you are. */
+  .app-header {
+    height: 0;
+    margin: 0;
+  }
+  .app-header .brand {
+    display: none;
+  }
+  .app {
+    padding-top: 10px;
+  }
+
+  .games-head {
+    margin-bottom: 10px;
+  }
+  .games-head h1 {
+    font-size: 1.35rem;
+  }
+
+  /* Chips in one scrolling row instead of wrapping onto several lines. */
+  .filter-chips,
+  .theme-chips.theme-picker {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-right: -12px;
+    padding-right: 12px;
+  }
+  .filter-chips::-webkit-scrollbar,
+  .theme-chips.theme-picker::-webkit-scrollbar {
+    display: none;
+  }
+  .filter-chips .chip,
+  .theme-picker .chip {
+    flex: none;
+  }
+
+  /* Review: board edge to edge, like Play. */
+  .review-screen .board-area {
+    width: auto;
+    margin: 0 -12px;
+    gap: 8px;
+    --board-radius: 0px;
+  }
+  .review-screen .board-area > :not(.board-row):not(.mobile-top) {
+    margin-left: 12px;
+    margin-right: 12px;
+  }
+  .review-screen .board-row {
+    gap: 0;
+  }
+  .review-screen .board-wrap {
+    box-shadow: none;
+  }
+  .review-screen .eval-bar {
+    flex-basis: 7px;
+    border-radius: 0;
+  }
+  .review-screen .eval-label {
+    display: none;
+  }
+  .review-nav {
+    grid-template-columns: 40px 40px 1fr 40px 40px auto 40px;
+    gap: 4px;
+  }
+
+  /* Puzzles: full-width boards too. */
+  .puzzle-layout .board-area {
+    width: auto;
+    margin: 0 -12px;
+    --board-radius: 0px;
+  }
+  .puzzle-layout .board-area > :not(.board-wrap) {
+    margin-left: 12px;
+    margin-right: 12px;
+  }
+  .puzzle-layout .board-wrap {
+    box-shadow: none;
+  }
+
+  /* Player strips on one line (name, then rating or status). */
+  .play-screen .player-text {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
+  }
+  .play-screen .player-name {
+    flex: none;
+  }
+}

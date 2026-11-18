@@ -76,7 +76,11 @@ export function ProgressScreen() {
           <span className="tile-label">Last 10 games</span>
           <span className="tile-value">{stats.recentAccuracy == null ? '–' : `${Math.round(stats.recentAccuracy)}%`}</span>
           <span className={`tile-sub ${trend == null ? 'muted' : trend >= 0 ? 'up' : 'down'}`}>
-            {trend == null ? 'no games yet' : `${trend >= 0 ? '▲' : '▼'} ${Math.abs(trend).toFixed(1)} vs your average`}
+            {trend == null
+              ? 'no games yet'
+              : Math.abs(trend) < 0.05
+                ? 'same as your average'
+                : `${trend > 0 ? '▲' : '▼'} ${Math.abs(trend).toFixed(1)} vs your average`}
           </span>
         </div>
         <div className="card tile">
@@ -134,7 +138,9 @@ export function ProgressScreen() {
                 </span>
                 <span className="bar-value">{p.moves ? `${p.perMove.toFixed(1)}%` : '–'}</span>
                 <span className="bar-sub muted">
-                  {plural(p.moves, 'move')} · {plural(p.mistakes, 'mistake')} · {plural(p.blunders, 'blunder')}
+                  {p.moves === 0
+                    ? 'No moves yet'
+                    : `${plural(p.moves, 'move')} · ${plural(p.mistakes, 'mistake')} · ${plural(p.blunders, 'blunder')}`}
                 </span>
               </li>
             ))}
