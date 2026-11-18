@@ -19,6 +19,8 @@ Then open http://localhost:5173.
 
 Run the unit tests with `npm test`.
 
+The app is a static site and is hosted on Vercel, which builds it from this GitHub repo on every push (settings in `vercel.json`).
+
 ## Licences
 
 - **Stockfish** is free software licensed under the **GNU General Public License v3 (GPL-3.0)**. This app uses the WebAssembly build from the [stockfish.js](https://github.com/nmrugg/stockfish.js) project by Nathan Rugg. The licence text is copied next to the engine files (`public/engine/COPYING.txt`) when you run `npm install`. If you distribute this app, the GPL applies to the engine and you must make its source available.

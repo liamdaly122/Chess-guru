@@ -19,6 +19,13 @@ npm run build    # type-check and production build into dist/
 Testing tip: open `http://localhost:5173/?fen=<FEN>` to start a game from any position. You play the side to move. Useful for promotion, mates and draws, e.g.
 `?fen=k7%2F4P3%2F8%2F8%2F8%2F8%2F8%2F4K3%20w%20-%20-%200%201`
 
+## Hosting (Vercel)
+
+- Hosted on Vercel, connected to the GitHub repo, so every push deploys automatically.
+- `vercel.json` sets the Vite build (`npm install`, `npm run build`, output `dist`). Install runs `postinstall`, which copies the engine, so `dist/engine/` is included.
+- The repo's only branch, `claude/stoic-archimedes-udsblu`, is GitHub's default branch, so Vercel treats it as production. If a `main` branch is added later, check Vercel's production branch setting.
+- The app is fully static (no server), so no environment variables are needed on Vercel.
+
 ## Decisions
 
 - **No Claude API, no server.** The user decided not to pay for API credits. Coaching notes will be generated in code from structured engine facts (templates). Keep coaching text generation in one module (`src/coach/`, from Phase 3) so an AI layer could be added later if wanted. With no server, there is no `.env`; `.env` is still gitignored in case one is added.
