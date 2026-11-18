@@ -4,6 +4,43 @@ By Liam Daly. A list of possible improvements, roughly in the order I'd consider
 
 Done so far: human-like Maia-3 bots, installable app, puzzles from your own mistakes (with spaced repetition), backup to Files / iCloud Drive, the opening trainer, automatic Lichess import (with background reviews), the rating estimate, the adaptive bot, and the daily goal with streaks.
 
+## Becoming a better player
+
+Ideas aimed at playing better, built on what the app already has (the engine, reviewed games and the coaching facts). None need a server or AI, and none can help in a live game elsewhere. Suggested order: blunder check mode, then win the won position (with hold the bad position), then endgame drills (under Training below).
+
+### Stop throwing games away
+
+**Blunder check mode** (small)
+In bot games, if my move is a blunder, the coach stops me once with "Are you sure? Look again", without saying why. I can take the move back or play it anyway. Builds the habit of checking before moving. Games played with it on don't count towards the rating estimate.
+
+**Win the won position** (small to medium)
+Positions from my games where I was clearly winning (say +3 or better) but didn't win. I play on from there against Stockfish until I convert. Practice aimed at exactly the chances I let slip.
+
+**Hold the bad position** (small, with the one above)
+The reverse: positions from my losses where I was worse but the game could still be saved, played on against the bot. Teaches finding the most stubborn defence.
+
+### Think, don't just react
+
+**Guess the move in reviews** (small)
+Before the review shows a mistake, it stops at that position and asks me to find a better move, then shows the engine's answer. Thinking about the position first instead of just reading the answer.
+
+**What does my opponent want?** (small)
+Now and then during a bot game the coach asks me to tap the square my opponent is threatening, then shows the answer. Uses the existing null-move threat analysis. Replaces the earlier "show the opponent's threat" idea.
+
+**Board vision drills** (small)
+Short exercises without moving pieces, for example "Which of your pieces are undefended?", "Tap every square the knight attacks" or "After these three moves, where is the bishop?". Trains what calculating needs.
+
+### Learn from patterns in my games
+
+**Weekly report** (small)
+Once a week: accuracy trend, most common kind of mistake, weakest game phase, best and worst openings, and one thing to focus on with a link to the right drill. Written from templates using my own numbers.
+
+**Opening report** (small)
+For each opening I play: games, score, how long I stay in book, and how the position looks at move 10. Shows which openings cost me points and links to the opening trainer.
+
+**Short lessons for each mistake type** (medium)
+A lesson for each of the 8 kinds of mistake the coach already finds (loose pieces, forks, pins and skewers, threats, king safety, missed tactics, missed mates, general): a few paragraphs, then 5 matching puzzles. Progress links to the lesson for my biggest weakness.
+
 ## Accounts and saving progress
 
 **Accounts and sync between devices** (medium)
@@ -17,9 +54,6 @@ Classic endgames to practise against Stockfish from set positions: king and quee
 
 **Try alternatives in review** (medium)
 From any position in a saved game, play your own moves and see the engine's verdict and line. Only from saved games, so it can't help in a live game elsewhere.
-
-**Show the opponent's threat** (small)
-A training toggle in bot games: "what is my opponent threatening?" uses the existing null-move analysis to point at the threat.
 
 ## Progress and motivation
 
