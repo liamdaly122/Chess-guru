@@ -18,16 +18,26 @@ import { recommendedThemes, THEME_LABEL } from '../../puzzles/themes'
 import { recordAttempt } from '../../storage/puzzleStore'
 import { usePuzzleData } from '../../storage/usePuzzleData'
 import { useGames } from '../../storage/useGames'
+import { useMistakePuzzles } from '../../storage/useMistakePuzzles'
+import { duePuzzles } from '../../puzzles/mistakes'
+import { MistakeTrainer } from './MistakeTrainer'
 import { BulbIcon, CheckIcon, TargetIcon } from '../../ui/icons'
 import { GameBoard } from '../play/GameBoard'
 
 /** Mixed practice from your weakest themes, or one chosen theme. */
 const MIXED = 'mixed'
 
+/** Route theme that opens the trainer for your own mistakes. */
+export const MISTAKES = 'mistakes'
+
 export function PuzzlesScreen({ theme }: { theme?: string }) {
   const [puzzles, setPuzzles] = useState<Puzzle[] | null>(null)
   const data = usePuzzleData()
   const games = useGames()
+  const mistakes = useMistakePuzzles()
+  const [now] = useState(() => Date.now())
+  const dueCount = mistakes ? duePuzzles(mistakes, now).length : 0
+  const mistakeMode = theme === MISTAKES
   const recommended = useMemo(() => recommendedThemes(games ? progressStats(games) : null), [games])
 
   useEffect(() => {
@@ -39,6 +49,36 @@ export function PuzzlesScreen({ theme }: { theme?: string }) {
   }, [])
 
   const selected = theme && THEME_LABEL[theme] ? theme : MIXED
+
+  const modeSwitch = (
+    <div className="mode-switch" role="tablist" aria-label="Puzzle type">
+      <a
+        role="tab"
+        aria-selected={mistakeMode}
+        className={mistakeMode ? 'active' : ''}
+        href={routeHref({ name: 'puzzles', theme: MISTAKES })}
+        data-testid="mode-mistakes"
+      >
+        Your mistakes{dueCount > 0 && <span className="count-pill">{dueCount}</span>}
+      </a>
+      <a role="tab" aria-selected={!mistakeMode} className={!mistakeMode ? 'active' : ''} href={routeHref({ name: 'puzzles' })}>
+        Puzzles
+      </a>
+    </div>
+  )
+
+  if (mistakeMode) {
+    return (
+      <div className="puzzles-screen">
+        <div className="games-head">
+          <h1>Puzzles</h1>
+        </div>
+        {modeSwitch}
+        {mistakes ? <MistakeTrainer puzzles={mistakes} /> : <p className="muted">Loading…</p>}
+      </div>
+    )
+  }
+
   if (!puzzles || !data) return <p className="muted page-message">Loading puzzles…</p>
 
   return (
@@ -49,6 +89,7 @@ export function PuzzlesScreen({ theme }: { theme?: string }) {
           <TargetIcon width={18} height={18} /> {data.rating}
         </span>
       </div>
+      {modeSwitch}
       <div className="theme-chips theme-picker" role="tablist" aria-label="Theme">
         <a className={`chip ${selected === MIXED ? 'active' : ''}`} href={routeHref({ name: 'puzzles' })}>
           Your weak spots

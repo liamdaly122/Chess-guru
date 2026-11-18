@@ -1,7 +1,8 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { routeHref } from '../../app/route'
 import { fetchLichessGames, LichessError } from '../../lichess/importGames'
-import { downloadText, exportAllPgn, exportBackup, importBackup } from '../../storage/backup'
+import { backUpToFile, downloadText, exportAllPgn, getLastBackupAt, importBackup } from '../../storage/backup'
+import { puzzlesChanged } from '../../storage/puzzleStore'
 import { saveGames } from '../../storage/games'
 import { formatDate, OUTCOME_WORD, opponentOf, outcomeOf, ratingCounts } from '../../storage/gameInfo'
 import type { GameRecord } from '../../storage/types'
@@ -62,7 +63,7 @@ export function GamesScreen() {
 
       <aside className="side-area">
         <LichessImport />
-        <BackupCard />
+        <BackupCard gameCount={games?.length ?? 0} />
       </aside>
     </div>
   )
@@ -192,29 +193,57 @@ function LichessImport() {
   )
 }
 
-function BackupCard() {
+function BackupCard({ gameCount }: { gameCount: number }) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const { at: lastBackupAt, daysSince } = useLastBackup()
   const stamp = () => new Date().toISOString().slice(0, 10)
+  const overdue = gameCount > 0 && (daysSince == null || daysSince >= BACKUP_REMINDER_DAYS)
+
+  async function backUp() {
+    try {
+      const how = await backUpToFile()
+      if (how === 'shared') setMessage('Backup saved. On iPhone choose "Save to Files", then iCloud Drive.')
+      else if (how === 'downloaded') setMessage('Backup downloaded. Keep it somewhere safe, such as iCloud Drive or Google Drive.')
+    } catch {
+      setMessage('Could not make the backup. Try again.')
+    }
+  }
 
   async function restore(file: File) {
     try {
-      const { restored, skipped } = await importBackup(await file.text())
-      setMessage(`Restored ${restored} game${restored === 1 ? '' : 's'}${skipped ? `, skipped ${skipped}` : ''}.`)
+      const { restored, skipped, puzzles } = await importBackup(await file.text())
+      setMessage(
+        `Restored ${restored} game${restored === 1 ? '' : 's'}` +
+          (puzzles ? ` and ${puzzles} puzzle record${puzzles === 1 ? '' : 's'}` : '') +
+          (skipped ? `, skipped ${skipped}` : '') +
+          '.',
+      )
     } catch (e) {
       setMessage(e instanceof Error ? e.message : 'Could not read that file.')
     }
   }
 
   return (
-    <section className="card backup-card" aria-label="Backup">
+    <section className={`card backup-card ${overdue ? 'overdue' : ''}`} aria-label="Backup" data-testid="backup-card">
       <h2 className="card-title">Backup</h2>
       <p className="muted small">
-        Games are stored only in this browser. Browsers (especially Safari on iPhone) can clear them, so keep a backup.
+        Your games and puzzle progress are stored only on this device. Deleting the app or clearing website data
+        removes them, so keep a backup in iCloud Drive (or Google Drive).
+      </p>
+      <p className={`backup-status ${overdue ? 'warn' : ''}`} data-testid="backup-status">
+        {lastBackupAt == null
+          ? gameCount > 0
+            ? 'No backup yet.'
+            : 'No backup yet. Back up once you have some games.'
+          : daysSince === 0
+            ? 'Last backup: today.'
+            : `Last backup: ${daysSince} day${daysSince === 1 ? '' : 's'} ago.`}
+        {overdue && lastBackupAt != null && ' Time for a new one.'}
       </p>
       <div className="backup-buttons">
-        <button type="button" onClick={async () => downloadText(`chess-guru-backup-${stamp()}.json`, await exportBackup(), 'application/json')}>
-          Download backup
+        <button type="button" className={overdue ? 'primary' : ''} onClick={() => void backUp()}>
+          Back up to Files / iCloud
         </button>
         <button type="button" onClick={() => fileRef.current?.click()}>
           Restore backup
@@ -241,4 +270,26 @@ function BackupCard() {
       )}
     </section>
   )
+}
+
+/** Remind the user to back up after this many days. */
+const BACKUP_REMINDER_DAYS = 7
+
+/** When the last backup was made, and how many whole days ago (worked out when loaded). */
+function useLastBackup(): { at: number | null; daysSince: number | null } {
+  const [state, setState] = useState<{ at: number | null; daysSince: number | null }>({ at: null, daysSince: null })
+  useEffect(() => {
+    let live = true
+    const load = () =>
+      getLastBackupAt().then(
+        (at) => live && setState({ at, daysSince: at == null ? null : Math.floor((Date.now() - at) / 86_400_000) }),
+      )
+    void load()
+    puzzlesChanged.addEventListener('change', load)
+    return () => {
+      live = false
+      puzzlesChanged.removeEventListener('change', load)
+    }
+  }, [])
+  return state
 }

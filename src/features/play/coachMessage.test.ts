@@ -32,9 +32,11 @@ const base: CoachInput = {
 describe('coachMessage', () => {
   it('rates the last move with praise for a good move', () => {
     const m = coachMessage(base)
-    expect(m.title).toBe('1. e4 is a good move')
+    expect(m.title).toBe('e4 is a good move')
     expect(m.text).toBe('A solid move. The engine slightly preferred d4.')
     expect(m.badge).toBe('good')
+    // scoreAfter is +0.2 for White (the mover), so the chip favours White.
+    expect(m).toMatchObject({ evalText: '+0.2', evalFavours: 'w' })
   })
 
   it('gives the note and tip for a mistake', () => {
@@ -43,7 +45,7 @@ describe('coachMessage', () => {
       ratings: [judgement('mistake'), null],
       notes: [{ text: 'This leaves your pawn loose.', tip: 'Check your pieces.' }, null],
     })
-    expect(m).toMatchObject({ tone: 'mistake', text: 'This leaves your pawn loose.', more: 'Next time: Check your pieces.' })
+    expect(m).toMatchObject({ tone: 'mistake', text: 'This leaves your pawn loose.', tip: 'Check your pieces.' })
   })
 
   it('shows a hint step ahead of the move rating', () => {

@@ -2,6 +2,7 @@ import type { Move } from 'chess.js'
 import type { PlyNote, PlyRating } from '../../analysis/useGameAnalysis'
 import type { MoveRating } from '../../chess/classify'
 import { uciToSan } from '../../chess/moves'
+import { formatScore, toWhitePov } from '../../chess/score'
 import type { Hint } from '../../coach/hints'
 import { countLabel, praiseText, RATING_VERDICT } from './ratingText'
 
@@ -10,11 +11,15 @@ export interface CoachMessage {
   tone: 'neutral' | 'pending' | 'hint' | 'warning' | MoveRating
   /** Rating badge to show, if any. */
   badge?: MoveRating | 'pending'
-  /** Bold first part, e.g. "12. Nf3 is a mistake". */
+  /** Bold heading, e.g. "Nf3 is a mistake". */
   title?: string
   text: string
-  /** Extra line shown when the bubble is expanded. */
-  more?: string
+  /** The "next time" tip, shown when the Tip button is tapped. */
+  tip?: string
+  /** Evaluation after the move, White's point of view, e.g. "+0.4" or "-M2". */
+  evalText?: string
+  /** Which side the evaluation favours, for the chip's colour. */
+  evalFavours?: 'w' | 'b'
 }
 
 export interface CoachInput {
@@ -77,12 +82,20 @@ export function coachMessage(input: CoachInput): CoachMessage {
   const r = ratings[ply]!
   if (r === 'pending') return { tone: 'pending', badge: 'pending', text: `Checking ${moveName(ply, move)}…` }
 
-  const title = `${moveName(ply, move)} ${RATING_VERDICT[r.rating]}`
+  const title = `${move.san} ${RATING_VERDICT[r.rating]}`
+  const white = toWhitePov(r.scoreAfter, move.color)
+  const evalInfo = {
+    evalText: formatScore(white),
+    evalFavours: (white.kind === 'cp' ? white.cp >= 0 : white.forUs) ? ('w' as const) : ('b' as const),
+  }
   const note = notes[ply]
   if (r.rating === 'mistake' || r.rating === 'blunder') {
-    if (!note || note === 'pending') return { tone: r.rating, badge: r.rating, title, text: 'Working out what went wrong…' }
-    return { tone: r.rating, badge: r.rating, title, text: note.text, more: `Next time: ${note.tip}` }
+    if (!note || note === 'pending') {
+      return { tone: r.rating, badge: r.rating, title, text: 'Working out what went wrong…', ...evalInfo }
+    }
+    return { tone: r.rating, badge: r.rating, title, text: note.text, tip: note.tip, ...evalInfo }
   }
   const best = r.bestMove ? uciToSan(move.before, r.bestMove) : null
-  return { tone: r.rating, badge: r.rating, title, text: praiseText(r.rating, best), more: input.bookNote ?? undefined }
+  const text = [praiseText(r.rating, best), input.bookNote].filter(Boolean).join(' ')
+  return { tone: r.rating, badge: r.rating, title, text, ...evalInfo }
 }

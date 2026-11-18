@@ -64,13 +64,13 @@ describe('backup', () => {
     resetDbForTests()
     expect(await listGames()).toEqual([])
 
-    expect(await importBackup(file)).toEqual({ restored: 2, skipped: 0 })
+    expect(await importBackup(file)).toMatchObject({ restored: 2, skipped: 0 })
     expect((await listGames()).map((g) => g.id)).toEqual(['b', 'a'])
   })
 
   it('skips broken entries and rejects files that are not backups', async () => {
     const file = JSON.stringify({ app: 'chess-guru', version: 1, games: [game('ok', 1), { id: 3 }] })
-    expect(await importBackup(file)).toEqual({ restored: 1, skipped: 1 })
+    expect(await importBackup(file)).toMatchObject({ restored: 1, skipped: 1 })
     await expect(importBackup('{"hello":1}')).rejects.toThrow(/isn’t a Chess Guru backup/)
     await expect(importBackup('not json')).rejects.toThrow(/isn’t a Chess Guru backup/)
   })
@@ -96,5 +96,68 @@ describe('puzzle store', () => {
       { theme: 'fork', tried: 2, solved: 1 },
       { theme: 'middlegame', tried: 1, solved: 1 },
     ])
+  })
+})
+
+describe('backup version 2', () => {
+  it('also saves and restores puzzle rating, attempts and mistake puzzles', async () => {
+    const { recordAttempt, getPuzzleRating, listAttempts } = await import('./puzzleStore')
+    const { syncMistakePuzzles, listMistakePuzzles, saveMistakePuzzle } = await import('./mistakeStore')
+    const { mistakePuzzlesFromGame, schedule, MASTERED_BOX } = await import('../puzzles/mistakes')
+
+    // A reviewed game with one blunder, which becomes a mistake puzzle.
+    const reviewed = game('r', 1, {
+      review: {
+        startEval: null,
+        accuracy: 60,
+        lessons: [],
+        complete: true,
+        plies: [
+          {
+            san: 'Nd4',
+            uci: 'f3d4',
+            color: 'w',
+            fenBefore: 'r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3',
+            fenAfter: '',
+            evalAfter: null,
+            judgement: {
+              rating: 'blunder',
+              bestUci: 'f1b5',
+              bestSan: 'Bb5',
+              winBefore: 55,
+              winAfter: 10,
+              scoreBefore: { kind: 'cp', cp: 30 },
+              scoreAfter: { kind: 'cp', cp: -300 },
+              bestLineSan: [],
+            },
+            note: { text: 'Loose knight.', tip: 'Check pieces.', category: 'loose-pieces' },
+          },
+        ],
+      },
+    })
+    await saveGame(reviewed)
+    expect(await syncMistakePuzzles([reviewed], 0)).toBe(1)
+    expect(await syncMistakePuzzles([reviewed], 0)).toBe(0) // not added twice
+    // Master it, so its "never due" time must survive JSON.
+    let p = mistakePuzzlesFromGame(reviewed, 0)[0]
+    for (let i = 0; i < MASTERED_BOX; i++) p = schedule(p, 'solved', 0)
+    await saveMistakePuzzle(p)
+    await recordAttempt({ id: 'x:1', puzzleId: 'x', at: 1, solved: true, themes: ['fork'], puzzleRating: 1200, ratingBefore: 1200, ratingAfter: 1216 })
+
+    const file = await exportBackup()
+    globalThis.indexedDB = new IDBFactory()
+    resetDbForTests()
+
+    expect(await importBackup(file)).toEqual({ restored: 1, skipped: 0, puzzles: 2 })
+    expect(await getPuzzleRating()).toBe(1216)
+    expect((await listAttempts()).map((a) => a.id)).toEqual(['x:1'])
+    const [restored] = await listMistakePuzzles()
+    expect(restored.box).toBe(MASTERED_BOX)
+    expect(restored.dueAt).toBe(p.dueAt)
+  })
+
+  it('still restores an old games-only backup', async () => {
+    const old = JSON.stringify({ app: 'chess-guru', version: 1, exportedAt: 1, games: [game('old', 1)] })
+    expect(await importBackup(old)).toEqual({ restored: 1, skipped: 0, puzzles: 0 })
   })
 })

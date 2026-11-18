@@ -29,13 +29,17 @@ export class Analyser {
    * `onProgress` gets the current best line each time the engine goes a ply deeper.
    * Returns null if the search was stopped with stop().
    */
-  async analyse(fen: string, onProgress?: (line: PvLine) => void): Promise<PositionAnalysis | null> {
+  async analyse(
+    fen: string,
+    onProgress?: (line: PvLine) => void,
+    limits: { depth: number; maxTimeMs: number } = { depth: ANALYSIS.depth, maxTimeMs: ANALYSIS.maxTimeMs },
+  ): Promise<PositionAnalysis | null> {
     await this.configured
     this.stopRequested = false
     const byPv = new Map<number, PvLine>()
     const { bestMove } = await this.engine.search(
       fen,
-      `depth ${ANALYSIS.depth} movetime ${ANALYSIS.maxTimeMs}`,
+      `depth ${limits.depth} movetime ${limits.maxTimeMs}`,
       (raw) => {
         const line = parseInfoLine(raw)
         if (!line) return

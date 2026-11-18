@@ -2,7 +2,7 @@
 
 By Liam Daly. A list of possible improvements, roughly in the order I'd consider them. Effort is a rough guide: small (an afternoon), medium (a day or two), large (several days).
 
-Already chosen and being built: human-like Maia-3 bots (Phase 6) and making the app installable on the phone.
+Done so far: human-like Maia-3 bots, installable app, puzzles from your own mistakes (with spaced repetition) and backup to Files / iCloud Drive.
 
 ## Accounts and saving progress
 
@@ -10,16 +10,10 @@ Already chosen and being built: human-like Maia-3 bots (Phase 6) and making the 
 Use Supabase (free tier): sign in with a magic link sent by email, and games, reviews and puzzle history sync between phone and laptop. The app stays offline-first: everything is saved locally as now and synced in the background when online.
 Trade-offs: changes the original "no accounts or cloud database" rule; needs a Supabase project and its public key in the app (safe with row-level security); personal data then lives on a third-party server.
 
-**Backup to a cloud file** (small)
-A lighter option than accounts: a one-tap backup that saves to iCloud Drive or Google Drive through the share sheet, and a restore from the same file. Builds on the existing JSON backup.
-
 **Automatic Lichess import** (small)
 Remember the Lichess username and fetch new finished games each time the app opens. Optionally review them in the background.
 
 ## Training
-
-**Puzzles from your own mistakes** (small to medium)
-Every mistake and blunder from reviewed games becomes a puzzle ("find the move you missed"). Repeat them on a spaced-repetition schedule until solved cleanly. Probably the most useful training feature, because it targets exactly the patterns you get wrong.
 
 **Opening trainer** (medium)
 Pick openings to learn (for White and Black). The app quizzes you on the lines from the opening book, with spaced repetition, and shows where your games usually leave the book.

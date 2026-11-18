@@ -7,6 +7,8 @@ import type { LessonCategory } from '../../review/types'
 import { themeRecords } from '../../storage/puzzleStore'
 import { usePuzzleData } from '../../storage/usePuzzleData'
 import { useGames } from '../../storage/useGames'
+import { useMistakePuzzles } from '../../storage/useMistakePuzzles'
+import { mistakeStats } from '../../puzzles/mistakes'
 import { AccuracyChart } from './AccuracyChart'
 import { BatchReviewer } from './BatchReviewer'
 
@@ -26,6 +28,9 @@ const CATEGORY_LABEL: Record<LessonCategory, string> = {
 export function ProgressScreen() {
   const games = useGames()
   const puzzles = usePuzzleData()
+  const mistakes = useMistakePuzzles()
+  const [now] = useState(() => Date.now())
+  const mistakeInfo = mistakes ? mistakeStats(mistakes, now) : null
   const [filter, setFilter] = useState<Filter>('all')
   const [batch, setBatch] = useState<string[] | null>(null)
   const finishBatch = useCallback(() => setBatch(null), [])
@@ -163,6 +168,12 @@ export function ProgressScreen() {
 
         <section className="card" aria-label="Puzzles">
           <h2 className="card-title">Practise your weak spots</h2>
+          {mistakeInfo && mistakeInfo.total > 0 && (
+            <a className="mistakes-link" href={routeHref({ name: 'puzzles', theme: 'mistakes' })} data-testid="progress-mistakes">
+              <strong>Your own mistakes:</strong> {mistakeInfo.due} due, {mistakeInfo.learning} learning,{' '}
+              {mistakeInfo.mastered} mastered
+            </a>
+          )}
           <div className="theme-chips">
             {themes.map((t) => (
               <a key={t} className="chip" href={routeHref({ name: 'puzzles', theme: t })}>

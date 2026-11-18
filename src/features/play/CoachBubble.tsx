@@ -1,40 +1,56 @@
 import { useState } from 'react'
-import { CapIcon } from '../../ui/icons'
+import { BulbIcon } from '../../ui/icons'
 import type { CoachMessage } from './coachMessage'
 import { RatingBadge } from './RatingBadge'
 
 /**
- * The coach above the board on phones (like Chess.com): a short speech bubble with the latest
- * rating, note or hint. Tap it to see the "next time" tip. Hidden on wider screens, which show
- * the full coach card beside the board instead.
+ * The coach above the board on phones, styled after Chess.com's coach: an avatar with a speech
+ * bubble holding the rating, the evaluation and the full note (never cut off). For mistakes a
+ * Tip button shows what to look for next time. Hidden on wider screens, which show the full
+ * coach card beside the board instead.
  */
 export function CoachBubble({ message }: { message: CoachMessage }) {
-  const [expandedFor, setExpandedFor] = useState<string | null>(null)
   const key = `${message.title ?? ''}|${message.text}`
-  const expanded = expandedFor === key
-  const canExpand = !!message.more
+  const [tipFor, setTipFor] = useState<string | null>(null)
+  const showTip = tipFor === key
 
   return (
-    <div className="coach-bubble-row" data-testid="coach-bubble">
-      <span className="coach-bubble-avatar" aria-hidden>
-        <CapIcon />
+    <div className="coach-row" data-testid="coach-bubble">
+      <span className="coach-face" aria-hidden>
+        <span className="coach-face-glyph">♞</span>
       </span>
-      <button
-        type="button"
-        className={`coach-bubble tone-bg-${message.tone} ${expanded ? 'expanded' : ''} ${canExpand && !expanded ? 'has-more' : ''}`}
-        onClick={() => canExpand && setExpandedFor(expanded ? null : key)}
-        aria-expanded={canExpand ? expanded : undefined}
-        aria-live="polite"
-        key={key}
-      >
-        {message.badge && <RatingBadge rating={message.badge} size="sm" className="coach-bubble-badge" />}
-        <span className="coach-bubble-text">
-          {message.title && <strong>{message.title}. </strong>}
-          {message.text}
-          {expanded && message.more && <span className="coach-bubble-more">{message.more}</span>}
-        </span>
-        {canExpand && !expanded && <span className="coach-bubble-hint">More</span>}
-      </button>
+      <div className={`coach-speech tone-edge-${message.tone}`} aria-live="polite" key={key}>
+        {(message.title || message.badge || message.evalText) && (
+          <div className="coach-speech-head">
+            {message.badge && <RatingBadge rating={message.badge} size="md" />}
+            {message.title && <strong className="coach-speech-title">{message.title}</strong>}
+            {message.tip && (
+              <button
+                type="button"
+                className="coach-speech-button"
+                onClick={() => setTipFor(showTip ? null : key)}
+                aria-expanded={showTip}
+                aria-label={showTip ? 'Hide tip' : 'Show tip'}
+              >
+                <BulbIcon width={16} height={16} />
+                Tip
+              </button>
+            )}
+            {message.evalText && (
+              <span className={`eval-chip favours-${message.evalFavours}`} title="Evaluation after the move">
+                {message.evalText}
+              </span>
+            )}
+          </div>
+        )}
+        <p className="coach-speech-text">{message.text}</p>
+        {message.tip && showTip && (
+          <p className="coach-speech-tip" data-testid="coach-tip">
+            <span className="tip-label">Next time</span>
+            {message.tip}
+          </p>
+        )}
+      </div>
     </div>
   )
 }

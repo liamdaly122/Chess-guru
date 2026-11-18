@@ -1,20 +1,38 @@
+import type { MistakePuzzle } from '../puzzles/mistakes'
+import { getDb } from './db'
 import { listGames, saveGames } from './games'
-import type { GameRecord } from './types'
+import { mistakesChanged } from './mistakeStore'
+import { getPuzzleRating, listAttempts, puzzlesChanged } from './puzzleStore'
+import type { GameRecord, PuzzleAttempt } from './types'
 
 /**
- * Backups. Browser storage can be cleared (Safari on iPhone may do it after a while without
- * visits), so the games list offers a full backup file and a restore.
+ * Backups. Everything lives only in this browser, which can lose it (deleting the app, clearing
+ * website data, a new phone), so the Games page offers a backup file and a restore. On iPhone
+ * the backup opens the share sheet, where "Save to Files" can put it in iCloud Drive.
  */
 
 interface BackupFile {
   app: 'chess-guru'
-  version: 1
+  /** 1: games only. 2: also puzzle rating, puzzle attempts and mistake puzzles. */
+  version: 1 | 2
   exportedAt: number
   games: GameRecord[]
+  puzzleRating?: number
+  puzzleAttempts?: PuzzleAttempt[]
+  mistakePuzzles?: MistakePuzzle[]
 }
 
 export async function exportBackup(): Promise<string> {
-  const file: BackupFile = { app: 'chess-guru', version: 1, exportedAt: Date.now(), games: await listGames() }
+  const db = await getDb()
+  const file: BackupFile = {
+    app: 'chess-guru',
+    version: 2,
+    exportedAt: Date.now(),
+    games: await listGames(),
+    puzzleRating: await getPuzzleRating(),
+    puzzleAttempts: await listAttempts(),
+    mistakePuzzles: await db.getAll('mistakePuzzles'),
+  }
   return JSON.stringify(file)
 }
 
@@ -39,8 +57,27 @@ function looksLikeGame(g: unknown): g is GameRecord {
   )
 }
 
-/** Restore games from a backup file. Games already here are replaced by the backup's version. */
-export async function importBackup(text: string): Promise<{ restored: number; skipped: number }> {
+function looksLikeAttempt(a: unknown): a is PuzzleAttempt {
+  const r = a as Partial<PuzzleAttempt> | null
+  return !!r && typeof r.id === 'string' && typeof r.puzzleId === 'string' && typeof r.at === 'number'
+}
+
+function looksLikeMistake(m: unknown): m is MistakePuzzle {
+  const r = m as Partial<MistakePuzzle> | null
+  return !!r && typeof r.id === 'string' && typeof r.fen === 'string' && typeof r.solution === 'string' && typeof r.dueAt === 'number'
+}
+
+export interface RestoreResult {
+  restored: number
+  skipped: number
+  puzzles: number
+}
+
+/**
+ * Restore from a backup file. Games, puzzle attempts and mistake puzzles in the backup replace
+ * the same ones here; anything else here is kept.
+ */
+export async function importBackup(text: string): Promise<RestoreResult> {
   let data: Partial<BackupFile>
   try {
     data = JSON.parse(text)
@@ -50,7 +87,60 @@ export async function importBackup(text: string): Promise<{ restored: number; sk
   if (data.app !== 'chess-guru' || !Array.isArray(data.games)) throw new Error('That file isn’t a Chess Guru backup.')
   const valid = data.games.filter(looksLikeGame)
   await saveGames(valid, { keepExistingReview: true })
-  return { restored: valid.length, skipped: data.games.length - valid.length }
+
+  const attempts = (data.puzzleAttempts ?? []).filter(looksLikeAttempt)
+  const mistakes = (data.mistakePuzzles ?? []).filter(looksLikeMistake)
+  if (attempts.length || mistakes.length || typeof data.puzzleRating === 'number') {
+    const db = await getDb()
+    const tx = db.transaction(['puzzleAttempts', 'mistakePuzzles', 'meta'], 'readwrite')
+    for (const a of attempts) await tx.objectStore('puzzleAttempts').put(a)
+    for (const m of mistakes) await tx.objectStore('mistakePuzzles').put(m)
+    if (typeof data.puzzleRating === 'number') {
+      await tx.objectStore('meta').put({ key: 'puzzleRating', value: Math.round(data.puzzleRating) })
+    }
+    await tx.done
+    puzzlesChanged.dispatchEvent(new Event('change'))
+    mistakesChanged.dispatchEvent(new Event('change'))
+  }
+  return { restored: valid.length, skipped: data.games.length - valid.length, puzzles: attempts.length + mistakes.length }
+}
+
+const LAST_BACKUP_KEY = 'lastBackupAt'
+
+/** When the last backup was made (ms), or null. */
+export async function getLastBackupAt(): Promise<number | null> {
+  const row = await (await getDb()).get('meta', LAST_BACKUP_KEY)
+  return typeof row?.value === 'number' ? row.value : null
+}
+
+async function setLastBackupAt(at: number): Promise<void> {
+  await (await getDb()).put('meta', { key: LAST_BACKUP_KEY, value: at })
+  puzzlesChanged.dispatchEvent(new Event('change'))
+}
+
+/**
+ * Make a backup file and hand it to the user: the share sheet where the browser supports
+ * sharing files (iPhone: "Save to Files" > iCloud Drive), otherwise a normal download.
+ * Returns how it was saved, or null if the user cancelled the share sheet.
+ */
+export async function backUpToFile(): Promise<'shared' | 'downloaded' | null> {
+  const text = await exportBackup()
+  const name = `chess-guru-backup-${new Date().toISOString().slice(0, 10)}.json`
+  const file = new File([text], name, { type: 'application/json' })
+  const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean }
+  if (nav.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: 'Chess Guru backup' })
+      await setLastBackupAt(Date.now())
+      return 'shared'
+    } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') return null
+      // Sharing failed for another reason: fall back to a download.
+    }
+  }
+  downloadText(name, text, 'application/json')
+  await setLastBackupAt(Date.now())
+  return 'downloaded'
 }
 
 /** Ask the browser to save a text file. */
