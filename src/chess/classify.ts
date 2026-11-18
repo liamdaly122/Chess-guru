@@ -3,9 +3,11 @@ import { BRILLIANT, GREAT_MOVE_GAP } from '../config/coach'
 import type { PositionAnalysis } from '../engine/uciInfo'
 import { negate, winPercent, type Score } from './score'
 
-export type MoveRating = 'brilliant' | 'great' | 'best' | 'good' | 'inaccuracy' | 'mistake' | 'blunder'
+/** 'book' is never returned by classifyMove; it is set when the move is known opening theory. */
+export type MoveRating = 'book' | 'brilliant' | 'great' | 'best' | 'good' | 'inaccuracy' | 'mistake' | 'blunder'
 
 const SEVERITY: Record<MoveRating, number> = {
+  book: 0,
   brilliant: 0,
   great: 0,
   best: 0,

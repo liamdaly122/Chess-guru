@@ -16,7 +16,7 @@ npm run lint     # oxlint
 npm run build    # type-check and production build into dist/
 ```
 
-Testing tip: open `http://localhost:5173/?fen=<FEN>` to start a game from any position. You play the side to move. Useful for promotion, mates and draws, e.g.
+Testing tip: open `http://localhost:5173/?fen=<FEN>` to start a game from any position. You play the side to move. Useful for promotion, mates and draws. **Development server only** (`import.meta.env.DEV`): on the live site it would let anyone paste a position from a game they are playing elsewhere and get engine help. e.g.
 `?fen=k7%2F4P3%2F8%2F8%2F8%2F8%2F8%2F4K3%20w%20-%20-%200%201`
 
 ## Hosting (Vercel)
@@ -51,6 +51,15 @@ Testing tip: open `http://localhost:5173/?fen=<FEN>` to start a game from any po
 - **Live coaching**: with it on, the bot waits for the rating of your move (max `COACH.botWaitsForRatingMs`, 2.5 s) so the badge appears on your piece before the bot replies. With it off, ratings and notes are hidden until the game ends, and the coach card then shows a summary.
 - **Board badge** is drawn on an overlay layer (not react-chessboard's `squareRenderer`, which would replace its square styling). It stays on your last move's square until your next move, and hides if the bot captured that piece. Sized with container query units (`cqw`).
 - UI: system font stack, CSS variables for light and dark themes, sage board colours, `<dialog>` for New game and Settings (bottom sheet on phones), preferences in localStorage (`usePreferences`).
+- **Saving games (Phase 4)**: IndexedDB via `idb` (`src/storage/`). One store, `games`, keyed by id, indexed by `endedAt`. Bot games are saved when they end and again when the review is complete; games where the user never moved aren't saved. Starting a new game mid-game saves it as a loss by resignation (the New game sheet says so and also offers "Just resign"). Bump `DB_VERSION` in `storage/db.ts` with an upgrade step when the stores change.
+- **GameRecord** (`storage/types.ts`) stores UCI moves, players, result, termination, opening/ECO, takebacks, hinted plies and a `review` (`review/types.ts`). The `pgn` field is rebuilt on every save from the record: headers, `[%eval]` tags, rating, best move, win chances and coaching note as comments. No line wrapping, because chess.js's `maxWidth` splits `[%eval x]` tags across lines.
+- **Review** (`features/review/`): if `game.review.complete`, it is shown straight from storage with no engine. Otherwise the analyser runs (`useGameAnalysis(..., { enabled })`) and the finished review is saved. Board read-only with the badge and a green arrow for the best move (not for best/great/brilliant/book moves), eval bar, eval graph (tap to jump), arrow keys, move list jumps, summary with accuracy, rating counts and lessons, PGN download/copy, delete.
+- **Accuracy**: Lichess per-move formula (with its +1 bonus, exact constants), game accuracy = plain average of the user's moves (Lichess also weights by volatility; not worth it here).
+- **Lessons** (`review/lessons.ts`): the user's mistakes/blunders grouped by the coaching fact behind them (loose pieces, forks, pins/skewers, threats, king safety, missed tactics, missed mates, general), ranked by total Win% lost, top 3. Templates, no AI.
+- **Lichess import** (`lichess/importGames.ts`): `GET /api/games/user/{name}?max=N&moves=true&opening=true&ongoing=false&finished=true`, `Accept: application/x-ndjson`, straight from the browser (Lichess allows CORS). Games with status created/started/aborted/noStart are dropped, as are variants other than standard/fromPosition and games without the user. Re-importing keeps any existing review. Note: from this cloud dev container Lichess returns 404 for game exports (it seems to block data-centre IPs), so the importer is tested with mocked responses; it works from a normal browser.
+- **Backups** (`storage/backup.ts`): JSON backup of every record (restore validates entries), and all games as one PGN. Needed because Safari can clear site storage.
+- **Navigation**: hash routes (`#/`, `#/games`, `#/review/<id>`) in `app/route.ts`, no router library. The play screen stays mounted (hidden) so a game in progress survives visiting other pages.
+- **Opening book**: Lichess `chess-openings` list (public domain/CC0), turned into `src/data/openings.json` by `scripts/build-openings.mjs` (committed; rerun the script to update). Keys are positions (FEN without move counters), so transpositions count. Value `[eco, name]` or `0` for an unnamed position on the way to a named line. Loaded lazily (~90 KB gzipped). Book = every position since the normal start is in the table; once out, the game stays out. Book moves get the `book` rating (set in `useGameAnalysis` via `bookPlies`), no coaching note, and no "best was". The play screen shows the opening name, how long it stayed in book, the book moves from the current position (folded away, only with live coaching on), and a note when your move left the book listing the book moves there. The opening and ECO are saved with bot games.
 - Board: react-chessboard v5 (`options` prop). It has no built-in promotion dialog, so `PromotionPicker` is ours. Tap-to-move is supported for phones.
 
 ## Defaults chosen (user didn't answer these, change if wanted)
@@ -81,6 +90,16 @@ src/coach/                     coaching facts, note templates, hints
 src/config/coach.ts            coaching, great/brilliant and hint settings (edit to tune)
 src/chess/material.ts          captured pieces and material lead
 src/ui/                        styles, icons, switch, modal
+src/app/route.ts               hash routes
+src/storage/                   IndexedDB games store, backups, React hooks, game display helpers
+src/review/                    review data, lessons, rating words for PGN
+src/pgn/exportPgn.ts           annotated PGN
+src/lichess/importGames.ts     Lichess import
+src/openings/                  opening book lookup + hook; data in src/data/openings.json
+scripts/build-openings.mjs     rebuilds the opening table from Lichess's list
+src/features/games/            games list, Lichess import card, backup card
+src/features/review/           review screen, eval graph, move card, summary
+src/features/openings/         opening panel, "left the book" note
 src/features/play/             play screen, board + badge overlay, eval bar, coach card, player strips, game-over card, new game form, move list
 src/ui/styles.css              all styles, mobile-first, dark mode
 ```
@@ -90,7 +109,7 @@ src/ui/styles.css              all styles, mobile-first, dark mode
 - [x] Phase 1: play against a bot
 - [x] Phase 2: analysis and move ratings
 - [x] Phase 3: coaching (pattern detectors, template notes, hints) and UI redesign
-- [ ] Phase 4: game review, history, Lichess import
+- [x] Phase 4: game review, history, Lichess import, opening book
 - [ ] Phase 5: weaknesses, progress page, puzzles
 - [ ] Phase 6: Maia for human-like low levels
 

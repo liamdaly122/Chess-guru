@@ -85,6 +85,13 @@ export const UserIcon = (p: IconProps) => (
   </Icon>
 )
 
+export const BookIcon = (p: IconProps) => (
+  <Icon strokeWidth={2.4} {...p}>
+    <path d="M4 5.5C4 4.7 4.7 4 5.5 4H11v15H5.5A1.5 1.5 0 0 1 4 17.5v-12Z" />
+    <path d="M20 5.5c0-.8-.7-1.5-1.5-1.5H13v15h5.5c.8 0 1.5-.7 1.5-1.5v-12Z" />
+  </Icon>
+)
+
 export const CapIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="M2 9 12 4l10 5-10 5L2 9Z" />

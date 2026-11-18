@@ -16,12 +16,21 @@ import { NewGameForm } from './NewGameForm'
 import { PlayerStrip } from './PlayerStrip'
 import { loadSettings, usePlayGame } from './usePlayGame'
 import { usePreferences } from './usePreferences'
+import { useSaveBotGame } from './useSaveBotGame'
+import { useOpeningBook } from '../../openings/useOpeningBook'
+import { OpeningPanel } from '../openings/OpeningPanel'
+import { leftBookNote } from '../openings/leftBookNote'
+import { navigate } from '../../app/route'
 
 export function PlayScreen() {
   const [prefs, setPrefs] = usePreferences()
   const [holdBot, setHoldBot] = useState(false)
   const play = usePlayGame({ holdBot })
-  const analysis = useGameAnalysis(play.positions, play.history, play.userColor)
+  const openingInfo = useOpeningBook(play.positions)
+  const analysis = useGameAnalysis(play.positions, play.history, play.userColor, {
+    bookPlies: openingInfo?.status.inBook,
+  })
+  const saver = useSaveBotGame(play, analysis, openingInfo?.status.opening ?? null)
 
   // With live coaching on, let the rating of your move appear before the bot replies,
   // but never wait longer than COACH.botWaitsForRatingMs.
@@ -102,6 +111,7 @@ export function PlayScreen() {
               <GameOverCard
                 status={play.status}
                 userColor={play.userColor}
+                onReview={() => navigate({ name: 'review', id: play.uid })}
                 onRematch={() => {
                   play.rematch()
                   setFlipped(false)
@@ -167,13 +177,20 @@ export function PlayScreen() {
           hint={analysis.hint}
           hintStep={hintStep}
           onHint={nextHint}
+          bookNote={showRatings ? leftBookNote(openingInfo, play.history, lastUserPly(play.history, play.userColor), play.userColor) : null}
+        />
+
+        <OpeningPanel
+          info={openingInfo}
+          history={play.history}
+          movesFrom={prefs.liveCoaching && play.isUserTurn ? play.fen : null}
         />
 
         <section className="card moves-card" aria-label="Moves">
           <h2 className="card-title">Moves</h2>
           <MoveList
             history={play.history}
-            ratings={analysis.ratings}
+            ratings={analysis.ratings.map((r) => (r && r !== 'pending' ? r.rating : r))}
             hideRatings={!showRatings}
             hintedPlies={play.hintedPlies}
           />
@@ -183,7 +200,14 @@ export function PlayScreen() {
       <Modal title="New game" open={modal === 'new'} onClose={() => setModal(null)}>
         <NewGameForm
           initial={loadSettings()}
+          inProgress={saver.inProgress}
+          onResign={() => {
+            saver.saveAsResigned()
+            play.resign()
+            setModal(null)
+          }}
           onStart={(s) => {
+            saver.saveAsResigned()
             play.newGame(s)
             setFlipped(false)
             setModal(null)
@@ -228,4 +252,9 @@ function lastUserBadge(history: Move[], ratings: PlyRating[], userColor: Color, 
     return { square: m.to as Square, rating: r === 'pending' ? 'pending' : r.rating }
   }
   return null
+}
+
+function lastUserPly(history: Move[], userColor: Color): number {
+  for (let i = history.length - 1; i >= 0; i--) if (history[i].color === userColor) return i
+  return -1
 }

@@ -6,6 +6,9 @@ import type { ColourChoice, GameSettings } from './usePlayGame'
 interface Props {
   initial: GameSettings
   onStart: (settings: GameSettings) => void
+  /** A game with at least one of your moves is still going. */
+  inProgress?: boolean
+  onResign?: () => void
 }
 
 const COLOURS: { value: ColourChoice; label: string; glyph: React.ReactNode }[] = [
@@ -22,7 +25,7 @@ function bandText(rating: number): string {
 }
 
 /** Pick a colour and a bot level, then start. */
-export function NewGameForm({ initial, onStart }: Props) {
+export function NewGameForm({ initial, onStart, inProgress, onResign }: Props) {
   const [colour, setColour] = useState<ColourChoice>(initial.colour)
   const startIndex = Math.max(
     0,
@@ -73,9 +76,17 @@ export function NewGameForm({ initial, onStart }: Props) {
       </div>
       <p className="muted level-band">{bandText(level.rating)} Ratings are approximate.</p>
 
+      {inProgress && (
+        <p className="resign-note">Starting a new game counts the current one as a loss (resigned). It is saved to your games.</p>
+      )}
       <button type="button" className="primary wide" onClick={() => onStart({ colour, levelRating: level.rating })}>
         Start game
       </button>
+      {inProgress && onResign && (
+        <button type="button" className="wide resign-button" onClick={onResign}>
+          Just resign this game
+        </button>
+      )}
     </div>
   )
 }

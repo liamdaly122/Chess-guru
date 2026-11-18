@@ -1,7 +1,7 @@
 import { Chess, type Color, type Move } from 'chess.js'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { findLevel, MIN_BOT_DELAY_MS, type Level } from '../../config/levels'
-import { getGameStatus } from '../../chess/gameStatus'
+import { getGameStatus, type GameStatus } from '../../chess/gameStatus'
 import { parseUci, plyToUndo, type MoveInput } from '../../chess/moves'
 import type { OpponentEngine } from '../../engine/OpponentEngine'
 import { StockfishOpponent } from '../../engine/StockfishOpponent'
@@ -16,6 +16,12 @@ export interface GameSettings {
 interface GameState {
   /** Increases on every new game, so stale bot replies can be ignored. */
   id: number
+  /** Unique id used to save the game. */
+  uid: string
+  /** When the game started (ms since 1970). */
+  startedAt: number
+  /** The user resigned. */
+  resigned: boolean
   userColor: Color
   level: Level
   /** Starting position if not the normal one (set with ?fen= in the URL, for testing). */
@@ -66,6 +72,9 @@ function replay(startFen: string | undefined, moves: string[]): Chess {
  * Handy for testing promotion, mates and draws. You play the side to move.
  */
 function fenFromUrl(): string | undefined {
+  // Development only. On the live site this would let anyone paste a position from a game
+  // they are playing elsewhere and get engine help, which the app must never do.
+  if (!import.meta.env.DEV) return undefined
   try {
     const fen = new URLSearchParams(window.location.search).get('fen')
     if (!fen) return undefined
@@ -73,6 +82,21 @@ function fenFromUrl(): string | undefined {
     return fen
   } catch {
     return undefined
+  }
+}
+
+function freshGame(id: number, userColor: Color, level: Level, startFen?: string): GameState {
+  return {
+    id,
+    uid: crypto.randomUUID(),
+    startedAt: Date.now(),
+    resigned: false,
+    userColor,
+    level,
+    startFen,
+    moves: [],
+    takebacks: 0,
+    hintedPlies: [],
   }
 }
 
@@ -119,11 +143,17 @@ export function usePlayGame({ holdBot = false }: PlayOptions = {}) {
     const s = loadSettings()
     const startFen = fenFromUrl()
     const userColor = startFen ? new Chess(startFen).turn() : resolveColour(s.colour)
-    return { id: 1, userColor, level: findLevel(s.levelRating), startFen, moves: [], takebacks: 0, hintedPlies: [] }
+    return freshGame(1, userColor, findLevel(s.levelRating), startFen)
   })
 
   const game = useMemo(() => replay(state.startFen, state.moves), [state.startFen, state.moves])
-  const status = useMemo(() => getGameStatus(game), [game])
+  const status = useMemo<GameStatus>(() => {
+    if (state.resigned) {
+      const winner = state.userColor === 'w' ? 'b' : 'w'
+      return { over: true, result: winner === 'w' ? '1-0' : '0-1', reason: 'resignation', winner }
+    }
+    return getGameStatus(game)
+  }, [game, state.resigned, state.userColor])
   const history = useMemo<Move[]>(() => game.history({ verbose: true }), [game])
   /** Every position in the game, start to now, as FENs. Used by the analyser. */
   const positions = useMemo(
@@ -189,6 +219,7 @@ export function usePlayGame({ holdBot = false }: PlayOptions = {}) {
 
   const undo = useCallback(() => {
     setState((prev) => {
+      if (prev.resigned) return prev
       const g = replay(prev.startFen, prev.moves)
       const n = plyToUndo(prev.moves.length, g.turn(), prev.userColor)
       if (n === 0) return prev
@@ -204,26 +235,16 @@ export function usePlayGame({ holdBot = false }: PlayOptions = {}) {
 
   const newGame = useCallback((settings: GameSettings) => {
     saveSettings(settings)
-    setState((prev) => ({
-      id: prev.id + 1,
-      userColor: resolveColour(settings.colour),
-      level: findLevel(settings.levelRating),
-      moves: [],
-      takebacks: 0,
-      hintedPlies: [],
-    }))
+    setState((prev) => freshGame(prev.id + 1, resolveColour(settings.colour), findLevel(settings.levelRating)))
   }, [])
 
   /** Same colour and level again. */
   const rematch = useCallback(() => {
-    setState((prev) => ({
-      id: prev.id + 1,
-      userColor: prev.userColor,
-      level: prev.level,
-      moves: [],
-      takebacks: 0,
-      hintedPlies: [],
-    }))
+    setState((prev) => freshGame(prev.id + 1, prev.userColor, prev.level))
+  }, [])
+
+  const resign = useCallback(() => {
+    setState((prev) => ({ ...prev, resigned: true }))
   }, [])
 
   /** Record that the user asked for a hint on the move they are about to play. */
@@ -235,9 +256,13 @@ export function usePlayGame({ holdBot = false }: PlayOptions = {}) {
     )
   }, [])
 
-  const canUndo = plyToUndo(state.moves.length, game.turn(), state.userColor) > 0
+  const canUndo = !state.resigned && plyToUndo(state.moves.length, game.turn(), state.userColor) > 0
 
   return {
+    uid: state.uid,
+    startedAt: state.startedAt,
+    startFen: state.startFen,
+    moves: state.moves,
     game,
     fen: game.fen(),
     history,
@@ -257,6 +282,7 @@ export function usePlayGame({ holdBot = false }: PlayOptions = {}) {
     undo,
     newGame,
     rematch,
+    resign,
     markHintUsed,
   }
 }

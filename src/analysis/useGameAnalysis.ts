@@ -40,16 +40,25 @@ function sacrificeOf(m: Move): number {
  * by `ratedColor`, writes coaching notes for their mistakes and blunders, and builds a hint
  * for the current position.
  */
-export function useGameAnalysis(positions: string[], history: Move[], ratedColor: Color) {
+export function useGameAnalysis(
+  positions: string[],
+  history: Move[],
+  ratedColor: Color,
+  { enabled = true, bookPlies }: { enabled?: boolean; bookPlies?: boolean[] } = {},
+) {
   const [queue, setQueue] = useState<AnalysisQueue | null>(null)
 
   useEffect(() => {
+    if (!enabled) return
     const q = new AnalysisQueue()
     // The analyser is an external system (a Web Worker), so creating it here is intended.
     // oxlint-disable-next-line react/set-state-in-effect
     setQueue(q)
-    return () => q.dispose()
-  }, [])
+    return () => {
+      q.dispose()
+      setQueue(null)
+    }
+  }, [enabled])
 
   useEffect(() => {
     queue?.setPositions(positions)
@@ -59,14 +68,16 @@ export function useGameAnalysis(positions: string[], history: Move[], ratedColor
 
   const ratings = useMemo<PlyRating[]>(
     () =>
-      history.map((m) => {
+      history.map((m, i) => {
         if (m.color !== ratedColor) return null
         const before = snapshot.results.get(m.before)
         const after = snapshot.results.get(m.after)
         if (!before || !after) return 'pending'
-        return classifyMove(before, after, m.lan, { sacrifice: sacrificeOf(m) })
+        const j = classifyMove(before, after, m.lan, { sacrifice: sacrificeOf(m) })
+        // Known opening theory is shown as a book move rather than judged by the engine.
+        return j && bookPlies?.[i] ? { ...j, rating: 'book' as const } : j
       }),
-    [history, ratedColor, snapshot.results],
+    [history, ratedColor, snapshot.results, bookPlies],
   )
 
   // Mistakes and blunders need the null-move position analysed too, to find ignored threats.

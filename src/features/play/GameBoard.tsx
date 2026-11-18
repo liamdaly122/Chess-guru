@@ -22,10 +22,12 @@ interface Props {
   badge?: BoardBadge | null
   /** Square to draw attention to (hint step 2). */
   glowSquare?: Square | null
-  /** Arrow to draw (hint step 3). */
-  arrow?: { from: Square; to: Square } | null
+  /** Arrow to draw (hint step 3, or the best move in review). */
+  arrow?: { from: Square; to: Square; color?: string } | null
   /** Anything to lay over the board, e.g. the game-over card. */
   children?: ReactNode
+  /** Must be unique when more than one board is on the page. */
+  boardId?: string
 }
 
 const LAST_MOVE: CSSProperties = { backgroundColor: 'var(--last-move)' }
@@ -50,7 +52,19 @@ function squarePosition(square: Square, orientation: 'white' | 'black') {
  * shows legal destinations, the last move and check, and draws the rating badge,
  * hint highlights and arrows on a layer above the pieces.
  */
-export function GameBoard({ game, orientation, userColor, canMove, lastMove, onMove, badge, glowSquare, arrow, children }: Props) {
+export function GameBoard({
+  game,
+  orientation,
+  userColor,
+  canMove,
+  lastMove,
+  onMove,
+  badge,
+  glowSquare,
+  arrow,
+  children,
+  boardId = 'play-board',
+}: Props) {
   const [selected, setSelected] = useState<Square | null>(null)
   const [pendingPromotion, setPendingPromotion] = useState<{ from: Square; to: Square } | null>(null)
   const fen = game.fen()
@@ -120,7 +134,7 @@ export function GameBoard({ game, orientation, userColor, canMove, lastMove, onM
   }, [game, lastMove, selected, legalFromSelected])
 
   const arrows = useMemo(
-    () => (arrow ? [{ startSquare: arrow.from, endSquare: arrow.to, color: 'rgba(59, 130, 246, 0.85)' }] : []),
+    () => (arrow ? [{ startSquare: arrow.from, endSquare: arrow.to, color: arrow.color ?? 'rgba(59, 130, 246, 0.85)' }] : []),
     [arrow],
   )
 
@@ -128,7 +142,7 @@ export function GameBoard({ game, orientation, userColor, canMove, lastMove, onM
     <div className="board-wrap">
       <Chessboard
         options={{
-          id: 'play-board',
+          id: boardId,
           position: fen,
           boardOrientation: orientation,
           squareStyles,

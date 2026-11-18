@@ -5,7 +5,7 @@ import { uciToSan } from '../../chess/moves'
 import type { Hint } from '../../coach/hints'
 import { BulbIcon, CapIcon } from '../../ui/icons'
 import { RatingBadge } from './RatingBadge'
-import { RATING_LABEL, RATING_VERDICT } from './ratingText'
+import { countLabel, praiseText, RATING_VERDICT } from './ratingText'
 
 interface Props {
   history: Move[]
@@ -18,6 +18,8 @@ interface Props {
   hint: Hint | null
   hintStep: number
   onHint: () => void
+  /** Shown under the verdict when your last move left the opening book. */
+  bookNote?: string | null
 }
 
 /** The coach's panel: rating and explanation of your last move, hints, and the end-of-game summary. */
@@ -50,7 +52,8 @@ function Paused() {
   return <p className="coach-text muted">Live coaching is off. Your ratings and notes will appear when the game ends.</p>
 }
 
-function LastMove({ history, ratings, notes }: Props) {
+function LastMove(props: Props) {
+  const { history, ratings, notes } = props
   const ply = lastRatedPly(ratings)
   if (ply === -1) {
     return <p className="coach-text muted">Make your move. I'll rate each one and explain any mistakes.</p>
@@ -67,24 +70,12 @@ function LastMove({ history, ratings, notes }: Props) {
       </div>
     )
   }
-  return <MoveVerdict ply={ply} move={move} judgement={rating} note={notes[ply]} />
-}
-
-function praise(j: MoveJudgement, best: string | null): string {
-  switch (j.rating) {
-    case 'brilliant':
-      return 'A sacrifice, and the engine rates it as the best move. Superb.'
-    case 'great':
-      return "The only good move here. The engine's next choice was much worse."
-    case 'best':
-      return "That's the engine's top choice."
-    case 'good':
-      return best ? `A solid move. The engine slightly preferred ${best}.` : 'A solid move.'
-    case 'inaccuracy':
-      return best ? `Not quite the best. ${best} was stronger.` : 'Not quite the best move.'
-    default:
-      return ''
-  }
+  return (
+    <>
+      <MoveVerdict ply={ply} move={move} judgement={rating} note={notes[ply]} />
+      {props.bookNote && <p className="book-note">{props.bookNote}</p>}
+    </>
+  )
 }
 
 function MoveVerdict({ ply, move, judgement, note }: { ply: number; move: Move; judgement: MoveJudgement; note: PlyNote }) {
@@ -113,9 +104,12 @@ function MoveVerdict({ ply, move, judgement, note }: { ply: number; move: Move; 
           <p className="coach-text muted">Working out what went wrong…</p>
         )
       ) : (
-        <p className="coach-text">{praise(judgement, best)}</p>
+        <p className="coach-text">{praiseText(judgement.rating, best)}</p>
       )}
-      <WinChange judgement={judgement} best={judgement.rating === 'best' || judgement.rating === 'great' || judgement.rating === 'brilliant' ? null : best} />
+      <WinChange
+        judgement={judgement}
+        best={['best', 'great', 'brilliant', 'book'].includes(judgement.rating) ? null : best}
+      />
     </div>
   )
 }
@@ -147,7 +141,7 @@ function WinChange({ judgement, best }: { judgement: MoveJudgement; best: string
   )
 }
 
-const ORDER: MoveRating[] = ['brilliant', 'great', 'best', 'good', 'inaccuracy', 'mistake', 'blunder']
+const ORDER: MoveRating[] = ['book', 'brilliant', 'great', 'best', 'good', 'inaccuracy', 'mistake', 'blunder']
 
 function GameSummary({ history, ratings, notes }: Props) {
   const judged = ratings.filter((r): r is MoveJudgement => !!r && r !== 'pending')
@@ -168,7 +162,7 @@ function GameSummary({ history, ratings, notes }: Props) {
             <li key={r}>
               <RatingBadge rating={r} size="sm" />
               <span>
-                {n} {RATING_LABEL[r].toLowerCase().replace(' move', '')}
+                {countLabel(r, n)}
               </span>
             </li>
           ))}

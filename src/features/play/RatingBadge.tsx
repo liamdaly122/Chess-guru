@@ -1,4 +1,5 @@
 import type { MoveRating } from '../../chess/classify'
+import { BookIcon } from '../../ui/icons'
 import { RATING_GLYPH, RATING_LABEL } from './ratingText'
 
 interface BadgeProps {
@@ -19,7 +20,7 @@ export function RatingBadge({ rating, size = 'md', className = '' }: BadgeProps)
       aria-label={RATING_LABEL[rating]}
       title={RATING_LABEL[rating]}
     >
-      {RATING_GLYPH[rating]}
+      {rating === 'book' ? <BookIcon className="badge-icon" /> : RATING_GLYPH[rating]}
     </span>
   )
 }

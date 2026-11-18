@@ -8,6 +8,7 @@ export type GameOverReason =
   | 'threefold repetition'
   | 'fifty-move rule'
   | 'insufficient material'
+  | 'resignation'
 
 export type GameStatus =
   | { over: false; turn: Color; inCheck: boolean }
@@ -39,6 +40,9 @@ export function describeStatus(status: GameStatus, userColor: Color): string {
   }
   if (status.reason === 'checkmate') {
     return status.winner === userColor ? 'Checkmate. You win!' : 'Checkmate. The bot wins.'
+  }
+  if (status.reason === 'resignation') {
+    return status.winner === userColor ? 'The bot resigned.' : 'You resigned.'
   }
   return `Draw by ${status.reason}.`
 }
