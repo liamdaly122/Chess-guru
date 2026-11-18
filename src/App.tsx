@@ -11,7 +11,7 @@ const TABS: { route: Route; label: string; icon: typeof BoardIcon }[] = [
   { route: { name: 'play' }, label: 'Play', icon: BoardIcon },
   { route: { name: 'games' }, label: 'Games', icon: ListIcon },
   { route: { name: 'progress' }, label: 'Progress', icon: ChartIcon },
-  { route: { name: 'puzzles' }, label: 'Puzzles', icon: TargetIcon },
+  { route: { name: 'puzzles' }, label: 'Train', icon: TargetIcon },
 ]
 
 export default function App() {

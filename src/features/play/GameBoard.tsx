@@ -94,7 +94,8 @@ export function GameBoard({
       return false
     }
     const ok = onMove({ from, to })
-    if (ok) setSelected(null)
+    // Clear the selection even when a trainer turns a legal move down, so no stale dots remain.
+    setSelected(null)
     return ok
   }
 

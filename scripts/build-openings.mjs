@@ -5,9 +5,12 @@
 //   node scripts/build-openings.mjs              downloads the five TSV files
 //   node scripts/build-openings.mjs <folder>     reads a.tsv ... e.tsv from a folder instead
 //
-// Output: { "<position>": ["C50", "Italian Game"] | 0 }
-//   The key is the position (FEN without move counters), so transpositions are recognised.
-//   0 marks a position on the way to a named line that has no name of its own: still "book".
+// Output:
+//   src/data/openings.json      { "<position>": ["C50", "Italian Game"] | 0 }
+//     The key is the position (FEN without move counters), so transpositions are recognised.
+//     0 marks a position on the way to a named line that has no name of its own: still "book".
+//   src/data/openingLines.json  [["C50", "Italian Game", "e4 e5 Nf3 Nc6 Bc4"], ...]
+//     Every named line with its moves, in list order, for the opening trainer.
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -30,6 +33,7 @@ async function readVolume(v) {
 const key = (fen) => fen.split(' ').slice(0, 4).join(' ')
 
 const book = {}
+const lineList = []
 let lines = 0
 for (const v of VOLUMES) {
   const rows = (await readVolume(v)).split('\n').slice(1).filter(Boolean)
@@ -45,6 +49,7 @@ for (const v of VOLUMES) {
     // A position can have several names; keep the first one listed (the most general).
     const k = key(chess.fen())
     if (!book[k]) book[k] = [eco, name]
+    lineList.push([eco, name, sans.join(' ')])
     lines++
   }
 }
@@ -52,5 +57,6 @@ for (const v of VOLUMES) {
 const out = join(root, 'src', 'data', 'openings.json')
 mkdirSync(dirname(out), { recursive: true })
 writeFileSync(out, JSON.stringify(book))
+writeFileSync(join(root, 'src', 'data', 'openingLines.json'), JSON.stringify(lineList))
 const named = Object.values(book).filter(Boolean).length
-console.log(`build-openings: ${lines} lines -> ${Object.keys(book).length} positions (${named} named) -> src/data/openings.json`)
+console.log(`build-openings: ${lines} lines -> ${Object.keys(book).length} positions (${named} named) -> src/data/openings.json and openingLines.json`)

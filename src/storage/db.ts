@@ -1,4 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
+import type { OpeningDrill } from '../openings/drill'
 import type { MistakePuzzle } from '../puzzles/mistakes'
 import type { GameRecord, PuzzleAttempt } from './types'
 
@@ -23,6 +24,12 @@ interface GuruDB extends DBSchema {
     value: MistakePuzzle
     indexes: { byDue: number }
   }
+  /** Opening lines you are learning, with their review schedule. */
+  openingDrills: {
+    key: string
+    value: OpeningDrill
+    indexes: { byDue: number }
+  }
   /** Small settings that must survive, e.g. the puzzle rating. */
   meta: {
     key: string
@@ -31,7 +38,7 @@ interface GuruDB extends DBSchema {
 }
 
 const DB_NAME = 'chess-guru'
-const DB_VERSION = 3
+const DB_VERSION = 4
 
 let dbPromise: Promise<IDBPDatabase<GuruDB>> | null = null
 
@@ -50,6 +57,10 @@ export function getDb(): Promise<IDBPDatabase<GuruDB>> {
       if (oldVersion < 3) {
         const mistakes = db.createObjectStore('mistakePuzzles', { keyPath: 'id' })
         mistakes.createIndex('byDue', 'dueAt')
+      }
+      if (oldVersion < 4) {
+        const drills = db.createObjectStore('openingDrills', { keyPath: 'id' })
+        drills.createIndex('byDue', 'dueAt')
       }
     },
   })

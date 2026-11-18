@@ -9,6 +9,8 @@ import { usePuzzleData } from '../../storage/usePuzzleData'
 import { useGames } from '../../storage/useGames'
 import { useMistakePuzzles } from '../../storage/useMistakePuzzles'
 import { mistakeStats } from '../../puzzles/mistakes'
+import { drillStats } from '../../openings/drill'
+import { useOpeningDrills } from '../../storage/openingStore'
 import { AccuracyChart } from './AccuracyChart'
 import { BatchReviewer } from './BatchReviewer'
 
@@ -31,6 +33,8 @@ export function ProgressScreen() {
   const mistakes = useMistakePuzzles()
   const [now] = useState(() => Date.now())
   const mistakeInfo = mistakes ? mistakeStats(mistakes, now) : null
+  const drills = useOpeningDrills()
+  const openingInfo = drills ? drillStats(drills, now) : null
   const [filter, setFilter] = useState<Filter>('all')
   const [batch, setBatch] = useState<string[] | null>(null)
   const finishBatch = useCallback(() => setBatch(null), [])
@@ -180,6 +184,12 @@ export function ProgressScreen() {
               {mistakeInfo.mastered} mastered
             </a>
           )}
+          <a className="mistakes-link" href={routeHref({ name: 'puzzles', theme: 'openings' })} data-testid="progress-openings">
+            <strong>Your openings:</strong>{' '}
+            {openingInfo && openingInfo.total > 0
+              ? `${openingInfo.due + openingInfo.fresh} to practise, ${openingInfo.mastered} mastered`
+              : 'pick lines to learn by heart'}
+          </a>
           <div className="theme-chips">
             {themes.map((t) => (
               <a key={t} className="chip" href={routeHref({ name: 'puzzles', theme: t })}>

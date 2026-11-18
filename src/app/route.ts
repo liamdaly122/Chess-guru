@@ -16,7 +16,7 @@ export function parseHash(hash: string): Route {
   if (path === 'games') return { name: 'games' }
   if (path === 'progress') return { name: 'progress' }
   if (path === 'puzzles') return { name: 'puzzles' }
-  const puzzles = path.match(/^puzzles\/([A-Za-z0-9]+)$/)
+  const puzzles = path.match(/^puzzles\/([A-Za-z0-9-]+)$/)
   if (puzzles) return { name: 'puzzles', theme: puzzles[1] }
   const review = path.match(/^review\/(.+)$/)
   if (review) return { name: 'review', id: decodeURIComponent(review[1]) }
@@ -38,7 +38,11 @@ export function routeHref(route: Route): string {
   }
 }
 
-export function navigate(route: Route): void {
+let keepScroll = false
+
+/** Go to a route. `keepScroll` leaves the page where it is (for a switch within the same page). */
+export function navigate(route: Route, options: { keepScroll?: boolean } = {}): void {
+  keepScroll = !!options.keepScroll
   window.location.hash = routeHref(route)
 }
 
@@ -47,7 +51,8 @@ export function useRoute(): Route {
   useEffect(() => {
     const onChange = () => {
       setRoute(parseHash(window.location.hash))
-      window.scrollTo({ top: 0 })
+      if (!keepScroll) window.scrollTo({ top: 0 })
+      keepScroll = false
     }
     window.addEventListener('hashchange', onChange)
     return () => window.removeEventListener('hashchange', onChange)

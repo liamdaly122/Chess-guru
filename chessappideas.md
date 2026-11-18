@@ -2,7 +2,7 @@
 
 By Liam Daly. A list of possible improvements, roughly in the order I'd consider them. Effort is a rough guide: small (an afternoon), medium (a day or two), large (several days).
 
-Done so far: human-like Maia-3 bots, installable app, puzzles from your own mistakes (with spaced repetition) and backup to Files / iCloud Drive.
+Done so far: human-like Maia-3 bots, installable app, puzzles from your own mistakes (with spaced repetition), backup to Files / iCloud Drive and the opening trainer.
 
 ## Accounts and saving progress
 
@@ -14,9 +14,6 @@ Trade-offs: changes the original "no accounts or cloud database" rule; needs a S
 Remember the Lichess username and fetch new finished games each time the app opens. Optionally review them in the background.
 
 ## Training
-
-**Opening trainer** (medium)
-Pick openings to learn (for White and Black). The app quizzes you on the lines from the opening book, with spaced repetition, and shows where your games usually leave the book.
 
 **Endgame drills** (small to medium)
 Classic endgames to practise against Stockfish from set positions: king and queen against king, king and rook against king, Lucena and Philidor positions, basic pawn endings.

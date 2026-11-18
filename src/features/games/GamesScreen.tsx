@@ -212,10 +212,11 @@ function BackupCard({ gameCount }: { gameCount: number }) {
 
   async function restore(file: File) {
     try {
-      const { restored, skipped, puzzles } = await importBackup(await file.text())
+      const { restored, skipped, puzzles, openings } = await importBackup(await file.text())
       setMessage(
         `Restored ${restored} game${restored === 1 ? '' : 's'}` +
-          (puzzles ? ` and ${puzzles} puzzle record${puzzles === 1 ? '' : 's'}` : '') +
+          (puzzles ? `, ${puzzles} puzzle record${puzzles === 1 ? '' : 's'}` : '') +
+          (openings ? `, ${openings} opening line${openings === 1 ? '' : 's'}` : '') +
           (skipped ? `, skipped ${skipped}` : '') +
           '.',
       )

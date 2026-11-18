@@ -1,4 +1,6 @@
 import 'fake-indexeddb/auto'
+import { newDrill } from '../openings/drill'
+import { addDrills, listDrills } from './openingStore'
 import { IDBFactory } from 'fake-indexeddb'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { exportAllPgn, exportBackup, importBackup } from './backup'
@@ -142,13 +144,15 @@ describe('backup version 2', () => {
     let p = mistakePuzzlesFromGame(reviewed, 0)[0]
     for (let i = 0; i < MASTERED_BOX; i++) p = schedule(p, 'solved', 0)
     await saveMistakePuzzle(p)
+    await addDrills([newDrill({ id: 'e4 e5 Nf3', eco: 'C40', name: "King's Knight Opening", san: ['e4', 'e5', 'Nf3'] }, 'w', 5)])
     await recordAttempt({ id: 'x:1', puzzleId: 'x', at: 1, solved: true, themes: ['fork'], puzzleRating: 1200, ratingBefore: 1200, ratingAfter: 1216 })
 
     const file = await exportBackup()
     globalThis.indexedDB = new IDBFactory()
     resetDbForTests()
 
-    expect(await importBackup(file)).toEqual({ restored: 1, skipped: 0, puzzles: 2 })
+    expect(await importBackup(file)).toEqual({ restored: 1, skipped: 0, puzzles: 2, openings: 1 })
+    expect((await listDrills()).map((d) => [d.id, d.uci.join(' ')])).toEqual([['w:e4 e5 Nf3', 'e2e4 e7e5 g1f3']])
     expect(await getPuzzleRating()).toBe(1216)
     expect((await listAttempts()).map((a) => a.id)).toEqual(['x:1'])
     const [restored] = await listMistakePuzzles()
@@ -158,6 +162,6 @@ describe('backup version 2', () => {
 
   it('still restores an old games-only backup', async () => {
     const old = JSON.stringify({ app: 'chess-guru', version: 1, exportedAt: 1, games: [game('old', 1)] })
-    expect(await importBackup(old)).toEqual({ restored: 1, skipped: 0, puzzles: 0 })
+    expect(await importBackup(old)).toEqual({ restored: 1, skipped: 0, puzzles: 0, openings: 0 })
   })
 })

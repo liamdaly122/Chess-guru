@@ -7,6 +7,7 @@ import type { GamePhase } from '../review/gamePhase'
 import type { LessonCategory } from '../review/types'
 import { opponentOf } from '../storage/gameInfo'
 import type { GameRecord } from '../storage/types'
+import { masteredBox, nextSchedule, type PuzzleResult } from '../training/srs'
 
 /** A "find the better move" puzzle made from one of your own mistakes, with its review schedule. */
 export interface MistakePuzzle {
@@ -41,14 +42,10 @@ export interface MistakePuzzle {
   lastAt?: number
 }
 
-/** solved: first try, no help. helped: solved with a hint or after wrong tries. failed: solution shown. */
-export type PuzzleResult = 'solved' | 'helped' | 'failed'
+export type { PuzzleResult } from '../training/srs'
+export { NEVER, whenText } from '../training/srs'
 
-const DAY = 24 * 60 * 60 * 1000
-const MINUTE = 60 * 1000
-export const MASTERED_BOX = MISTAKE_PUZZLES.intervalsDays.length + 1
-/** "Due" time for mastered puzzles. A big ordinary number, not Infinity, so it survives JSON backups. */
-export const NEVER = Number.MAX_SAFE_INTEGER
+export const MASTERED_BOX = masteredBox(MISTAKE_PUZZLES)
 
 const RATINGS: readonly string[] = MISTAKE_PUZZLES.ratings
 
@@ -91,14 +88,7 @@ export function mistakePuzzlesFromGame(game: GameRecord, now = Date.now()): Mist
 
 /** Update a puzzle's schedule after an attempt. */
 export function schedule(p: MistakePuzzle, result: PuzzleResult, now = Date.now()): MistakePuzzle {
-  const base = { ...p, attempts: p.attempts + 1, lastResult: result, lastAt: now }
-  if (result === 'solved') {
-    const box = Math.min(p.box + 1, MASTERED_BOX)
-    const days = MISTAKE_PUZZLES.intervalsDays[box - 1]
-    return { ...base, box, cleanSolves: p.cleanSolves + 1, dueAt: box >= MASTERED_BOX ? NEVER : now + days * DAY }
-  }
-  if (result === 'helped') return { ...base, dueAt: now + MISTAKE_PUZZLES.helpedDays * DAY }
-  return { ...base, box: 0, dueAt: now + MISTAKE_PUZZLES.retryMinutes * MINUTE }
+  return nextSchedule(p, result, MISTAKE_PUZZLES, now)
 }
 
 export function isMastered(p: MistakePuzzle): boolean {
@@ -135,23 +125,6 @@ export function mistakeStats(all: MistakePuzzle[], now = Date.now()): MistakeSta
     mastered,
     nextDueAt: due === 0 && waiting.length ? Math.min(...waiting) : null,
   }
-}
-
-/** "in 10 minutes", "tomorrow", "in 3 days" */
-export function whenText(dueAt: number, now = Date.now()): string {
-  if (dueAt >= NEVER) return 'never (mastered)'
-  const ms = dueAt - now
-  if (ms <= 0) return 'now'
-  if (ms < 60 * MINUTE) {
-    const m = Math.max(1, Math.round(ms / MINUTE))
-    return `in ${m} minute${m === 1 ? '' : 's'}`
-  }
-  if (ms < 20 * 60 * MINUTE) {
-    const h = Math.round(ms / (60 * MINUTE))
-    return `in ${h} hour${h === 1 ? '' : 's'}`
-  }
-  const days = Math.round(ms / DAY)
-  return days === 1 ? 'tomorrow' : `in ${days} days`
 }
 
 export type AttemptCheck =

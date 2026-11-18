@@ -1685,7 +1685,8 @@ button.danger {
 }
 
 .import-form input,
-.import-form select {
+.import-form select,
+.line-search {
   min-height: 44px;
   padding: 8px 12px;
   border-radius: var(--radius-sm);
@@ -3117,5 +3118,218 @@ a.chip.active {
   }
   .play-screen .player-name {
     flex: none;
+  }
+}
+
+/* ============================================================
+   Opening trainer
+   ============================================================ */
+
+.mode-switch.three {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.trainer-bar {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.trainer-bar p {
+  margin: 0;
+}
+
+.drill-sub {
+  margin: -6px 0 8px;
+}
+
+.puzzle-layout .move-strip {
+  margin-bottom: 8px;
+}
+
+.drill-line {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.opening-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 760px;
+}
+
+.opening-lines .intro {
+  margin: 0;
+}
+
+.line-search {
+  width: 100%;
+  margin-bottom: 10px;
+  appearance: none;
+}
+
+.chip-row {
+  margin-bottom: 4px;
+}
+
+.line-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.line-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+
+.line-row:first-child {
+  border-top: none;
+}
+
+.line-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.line-info p {
+  margin: 0;
+}
+
+.line-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+}
+
+.line-moves {
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+
+.eco {
+  flex: none;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.side-buttons {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.side-buttons button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+}
+
+.side-buttons .side-chip {
+  width: 14px;
+  height: 14px;
+}
+
+.side-buttons button.added:disabled {
+  opacity: 1;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: transparent;
+}
+
+@media (max-width: 700px) {
+  .mode-switch.three a {
+    font-size: 0.85rem;
+  }
+
+  /* Search results: the name gets the full width, the side buttons go underneath. */
+  .line-row:has(.side-buttons) {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .line-row .side-buttons {
+    flex-direction: row;
+    width: 100%;
+  }
+
+  .line-row .side-buttons button {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .opening-lines .chip-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin: 0 -16px 4px;
+    padding: 0 16px 2px;
+    scrollbar-width: none;
+  }
+
+  .opening-lines .chip-row .chip {
+    flex: none;
+  }
+}
+
+.lines-columns {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.lines-side,
+.lines-main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.lines-side:empty {
+  display: none;
+}
+
+.side-buttons {
+  flex-direction: row;
+}
+
+@media (min-width: 960px) {
+  .opening-lines {
+    max-width: none;
+  }
+
+  .lines-columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px;
+    align-items: start;
+    gap: 24px;
+  }
+
+  .lines-side {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .lines-main {
+    grid-column: 1;
+    grid-row: 1;
   }
 }

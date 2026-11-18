@@ -1,7 +1,9 @@
+import type { OpeningDrill } from '../openings/drill'
 import type { MistakePuzzle } from '../puzzles/mistakes'
 import { getDb } from './db'
 import { listGames, saveGames } from './games'
 import { mistakesChanged } from './mistakeStore'
+import { drillsChanged } from './openingStore'
 import { getPuzzleRating, listAttempts, puzzlesChanged } from './puzzleStore'
 import type { GameRecord, PuzzleAttempt } from './types'
 
@@ -13,25 +15,27 @@ import type { GameRecord, PuzzleAttempt } from './types'
 
 interface BackupFile {
   app: 'chess-guru'
-  /** 1: games only. 2: also puzzle rating, puzzle attempts and mistake puzzles. */
-  version: 1 | 2
+  /** 1: games only. 2: also puzzle rating, puzzle attempts and mistake puzzles. 3: also opening lines. */
+  version: 1 | 2 | 3
   exportedAt: number
   games: GameRecord[]
   puzzleRating?: number
   puzzleAttempts?: PuzzleAttempt[]
   mistakePuzzles?: MistakePuzzle[]
+  openingDrills?: OpeningDrill[]
 }
 
 export async function exportBackup(): Promise<string> {
   const db = await getDb()
   const file: BackupFile = {
     app: 'chess-guru',
-    version: 2,
+    version: 3,
     exportedAt: Date.now(),
     games: await listGames(),
     puzzleRating: await getPuzzleRating(),
     puzzleAttempts: await listAttempts(),
     mistakePuzzles: await db.getAll('mistakePuzzles'),
+    openingDrills: await db.getAll('openingDrills'),
   }
   return JSON.stringify(file)
 }
@@ -67,14 +71,27 @@ function looksLikeMistake(m: unknown): m is MistakePuzzle {
   return !!r && typeof r.id === 'string' && typeof r.fen === 'string' && typeof r.solution === 'string' && typeof r.dueAt === 'number'
 }
 
+function looksLikeDrill(d: unknown): d is OpeningDrill {
+  const r = d as Partial<OpeningDrill> | null
+  return (
+    !!r &&
+    typeof r.id === 'string' &&
+    Array.isArray(r.uci) &&
+    Array.isArray(r.san) &&
+    (r.side === 'w' || r.side === 'b') &&
+    typeof r.dueAt === 'number'
+  )
+}
+
 export interface RestoreResult {
   restored: number
   skipped: number
   puzzles: number
+  openings: number
 }
 
 /**
- * Restore from a backup file. Games, puzzle attempts and mistake puzzles in the backup replace
+ * Restore from a backup file. Games, puzzle attempts, mistake puzzles and opening lines in the backup replace
  * the same ones here; anything else here is kept.
  */
 export async function importBackup(text: string): Promise<RestoreResult> {
@@ -90,19 +107,27 @@ export async function importBackup(text: string): Promise<RestoreResult> {
 
   const attempts = (data.puzzleAttempts ?? []).filter(looksLikeAttempt)
   const mistakes = (data.mistakePuzzles ?? []).filter(looksLikeMistake)
-  if (attempts.length || mistakes.length || typeof data.puzzleRating === 'number') {
+  const drills = (data.openingDrills ?? []).filter(looksLikeDrill)
+  if (attempts.length || mistakes.length || drills.length || typeof data.puzzleRating === 'number') {
     const db = await getDb()
-    const tx = db.transaction(['puzzleAttempts', 'mistakePuzzles', 'meta'], 'readwrite')
+    const tx = db.transaction(['puzzleAttempts', 'mistakePuzzles', 'openingDrills', 'meta'], 'readwrite')
     for (const a of attempts) await tx.objectStore('puzzleAttempts').put(a)
     for (const m of mistakes) await tx.objectStore('mistakePuzzles').put(m)
+    for (const d of drills) await tx.objectStore('openingDrills').put(d)
     if (typeof data.puzzleRating === 'number') {
       await tx.objectStore('meta').put({ key: 'puzzleRating', value: Math.round(data.puzzleRating) })
     }
     await tx.done
     puzzlesChanged.dispatchEvent(new Event('change'))
     mistakesChanged.dispatchEvent(new Event('change'))
+    drillsChanged.dispatchEvent(new Event('change'))
   }
-  return { restored: valid.length, skipped: data.games.length - valid.length, puzzles: attempts.length + mistakes.length }
+  return {
+    restored: valid.length,
+    skipped: data.games.length - valid.length,
+    puzzles: attempts.length + mistakes.length,
+    openings: drills.length,
+  }
 }
 
 const LAST_BACKUP_KEY = 'lastBackupAt'

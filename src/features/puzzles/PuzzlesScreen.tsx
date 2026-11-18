@@ -21,6 +21,10 @@ import { useGames } from '../../storage/useGames'
 import { useMistakePuzzles } from '../../storage/useMistakePuzzles'
 import { duePuzzles } from '../../puzzles/mistakes'
 import { MistakeTrainer } from './MistakeTrainer'
+import { drillStats } from '../../openings/drill'
+import { useOpeningDrills } from '../../storage/openingStore'
+import { OpeningLines } from '../openings/OpeningLines'
+import { OPENING_LINES, OPENINGS, OpeningTrainer } from '../openings/OpeningTrainer'
 import { BulbIcon, CheckIcon, TargetIcon } from '../../ui/icons'
 import { GameBoard } from '../play/GameBoard'
 
@@ -35,9 +39,13 @@ export function PuzzlesScreen({ theme }: { theme?: string }) {
   const data = usePuzzleData()
   const games = useGames()
   const mistakes = useMistakePuzzles()
+  const drills = useOpeningDrills()
   const [now] = useState(() => Date.now())
   const dueCount = mistakes ? duePuzzles(mistakes, now).length : 0
+  const openingStats = drills ? drillStats(drills, now) : null
+  const openingCount = openingStats ? openingStats.due + openingStats.fresh : 0
   const mistakeMode = theme === MISTAKES
+  const openingMode = theme === OPENINGS || theme === OPENING_LINES
   const recommended = useMemo(() => recommendedThemes(games ? progressStats(games) : null), [games])
 
   useEffect(() => {
@@ -51,7 +59,7 @@ export function PuzzlesScreen({ theme }: { theme?: string }) {
   const selected = theme && THEME_LABEL[theme] ? theme : MIXED
 
   const modeSwitch = (
-    <div className="mode-switch" role="tablist" aria-label="Puzzle type">
+    <div className="mode-switch three" role="tablist" aria-label="Training">
       <a
         role="tab"
         aria-selected={mistakeMode}
@@ -59,19 +67,51 @@ export function PuzzlesScreen({ theme }: { theme?: string }) {
         href={routeHref({ name: 'puzzles', theme: MISTAKES })}
         data-testid="mode-mistakes"
       >
-        Your mistakes{dueCount > 0 && <span className="count-pill">{dueCount}</span>}
+        Mistakes{dueCount > 0 && <span className="count-pill">{dueCount}</span>}
       </a>
-      <a role="tab" aria-selected={!mistakeMode} className={!mistakeMode ? 'active' : ''} href={routeHref({ name: 'puzzles' })}>
+      <a
+        role="tab"
+        aria-selected={!mistakeMode && !openingMode}
+        className={!mistakeMode && !openingMode ? 'active' : ''}
+        href={routeHref({ name: 'puzzles' })}
+      >
         Puzzles
+      </a>
+      <a
+        role="tab"
+        aria-selected={openingMode}
+        className={openingMode ? 'active' : ''}
+        href={routeHref({ name: 'puzzles', theme: OPENINGS })}
+        data-testid="mode-openings"
+      >
+        Openings{openingCount > 0 && <span className="count-pill">{openingCount}</span>}
       </a>
     </div>
   )
+
+  if (openingMode) {
+    return (
+      <div className="puzzles-screen">
+        <div className="games-head">
+          <h1>Train</h1>
+        </div>
+        {modeSwitch}
+        {!drills ? (
+          <p className="muted">Loading…</p>
+        ) : theme === OPENING_LINES || drills.length === 0 ? (
+          <OpeningLines drills={drills} />
+        ) : (
+          <OpeningTrainer drills={drills} />
+        )}
+      </div>
+    )
+  }
 
   if (mistakeMode) {
     return (
       <div className="puzzles-screen">
         <div className="games-head">
-          <h1>Puzzles</h1>
+          <h1>Train</h1>
         </div>
         {modeSwitch}
         {mistakes ? <MistakeTrainer puzzles={mistakes} /> : <p className="muted">Loading…</p>}
@@ -84,7 +124,7 @@ export function PuzzlesScreen({ theme }: { theme?: string }) {
   return (
     <div className="puzzles-screen">
       <div className="games-head">
-        <h1>Puzzles</h1>
+        <h1>Train</h1>
         <span className="puzzle-rating" data-testid="puzzle-rating">
           <TargetIcon width={18} height={18} /> {data.rating}
         </span>

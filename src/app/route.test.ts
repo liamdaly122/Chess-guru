@@ -10,6 +10,7 @@ describe('routes', () => {
     expect(parseHash('#/progress')).toEqual({ name: 'progress' })
     expect(parseHash('#/puzzles')).toEqual({ name: 'puzzles' })
     expect(parseHash('#/puzzles/fork')).toEqual({ name: 'puzzles', theme: 'fork' })
+    expect(parseHash('#/puzzles/openings-lines')).toEqual({ name: 'puzzles', theme: 'openings-lines' })
     expect(routeHref({ name: 'puzzles', theme: 'mateIn2' })).toBe('#/puzzles/mateIn2')
     expect(parseHash('#/nonsense')).toEqual({ name: 'play' })
   })
