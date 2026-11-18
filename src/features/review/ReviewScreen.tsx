@@ -1,12 +1,8 @@
-import { Chess, type Move, type Square } from 'chess.js'
+import { Chess, type Square } from 'chess.js'
 import { useEffect, useMemo, useState } from 'react'
 import { navigate } from '../../app/route'
-import { useGameAnalysis } from '../../analysis/useGameAnalysis'
 import type { MoveRating } from '../../chess/classify'
-import { parseUci } from '../../chess/moves'
-import { buildReview } from '../../review/buildReview'
-import type { GameReview } from '../../review/types'
-import { deleteGame, saveGame } from '../../storage/games'
+import { deleteGame } from '../../storage/games'
 import { formatDate, opponentOf } from '../../storage/gameInfo'
 import type { GameRecord } from '../../storage/types'
 import { useGame } from '../../storage/useGames'
@@ -18,7 +14,7 @@ import { MoveList } from '../play/MoveList'
 import { EvalGraph } from './EvalGraph'
 import { ReviewMoveCard } from './ReviewMoveCard'
 import { ReviewSummary } from './ReviewSummary'
-import { useOpeningBook } from '../../openings/useOpeningBook'
+import { useGameReview } from './useGameReview'
 import { OpeningPanel } from '../openings/OpeningPanel'
 import { leftBookNote } from '../openings/leftBookNote'
 
@@ -36,50 +32,9 @@ export function ReviewScreen({ id }: { id: string }) {
   return <ReviewView key={game.id} game={game} />
 }
 
-function replayHistory(g: GameRecord): Move[] {
-  const chess = g.startFen ? new Chess(g.startFen) : new Chess()
-  for (const m of g.moves) chess.move(parseUci(m))
-  return chess.history({ verbose: true })
-}
-
 function ReviewView({ game }: { game: GameRecord }) {
-  const history = useMemo(() => replayHistory(game), [game])
-  const positions = useMemo(
-    () => (history.length ? [history[0].before, ...history.map((m) => m.after)] : [new Chess(game.startFen).fen()]),
-    [history, game.startFen],
-  )
-
-  // Use the stored review if the game has been fully analysed; otherwise run the engine now.
-  const stored = game.review?.complete ? game.review : null
-  const openingInfo = useOpeningBook(positions)
-  const analysis = useGameAnalysis(positions, history, game.userColor, {
-    enabled: !stored,
-    bookPlies: openingInfo?.status.inBook,
-  })
-  const live = useMemo<GameReview | null>(
-    () =>
-      stored
-        ? null
-        : buildReview(history, positions[0], analysis.snapshot.results, analysis.ratings, analysis.notes, game.userColor),
-    [stored, history, positions, analysis.snapshot.results, analysis.ratings, analysis.notes, game.userColor],
-  )
-  const review = stored ?? live!
-
-  // Save the review (and the annotated PGN) once the engine has finished.
-  // Wait for the opening book too, so book moves are stored as book moves.
-  useEffect(() => {
-    if (!live?.complete || !openingInfo) return
-    const opening = openingInfo.status.opening
-    void saveGame({
-      ...game,
-      review: live,
-      // Lichess games already have Lichess's own opening name; bot games get the book's.
-      opening: game.opening ?? opening?.name,
-      eco: game.eco ?? opening?.eco,
-    })
-  }, [live, game, openingInfo])
-
-  const done = positions.filter((f) => analysis.snapshot.results.has(f)).length
+  const { history, positions, review, openingInfo, progress } = useGameReview(game)
+  const done = progress.done
   const [ply, setPly] = useState(-1)
   const [flipped, setFlipped] = useState(false)
   const last = history.length - 1

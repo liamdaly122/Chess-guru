@@ -27,4 +27,5 @@ The app is a static site and is hosted on Vercel, which builds it from this GitH
 - [chess.js](https://github.com/jhlywa/chess.js) (BSD-2-Clause) handles the rules of chess.
 - [react-chessboard](https://github.com/Clariity/react-chessboard) (MIT) draws the board.
 - Opening names come from the [Lichess chess-openings](https://github.com/lichess-org/chess-openings) list, which is public domain (CC0).
+- Puzzles are a small selection from the [Lichess puzzle database](https://database.lichess.org/#puzzles), which is public domain (CC0).
 - Game import uses the public [Lichess API](https://lichess.org/api). Only finished games are imported, for review afterwards; the app never helps during a live game.

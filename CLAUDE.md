@@ -14,6 +14,8 @@ npm run dev      # http://localhost:5173
 npm test         # unit tests (Vitest)
 npm run lint     # oxlint
 npm run build    # type-check and production build into dist/
+npm run build:openings   # rebuild src/data/openings.json from Lichess's opening list
+npm run build:puzzles    # rebuild src/data/puzzles.json from the Lichess puzzle database (~300 MB stream)
 ```
 
 Testing tip: open `http://localhost:5173/?fen=<FEN>` to start a game from any position. You play the side to move. Useful for promotion, mates and draws. **Development server only** (`import.meta.env.DEV`): on the live site it would let anyone paste a position from a game they are playing elsewhere and get engine help. e.g.
@@ -60,6 +62,12 @@ Testing tip: open `http://localhost:5173/?fen=<FEN>` to start a game from any po
 - **Backups** (`storage/backup.ts`): JSON backup of every record (restore validates entries), and all games as one PGN. Needed because Safari can clear site storage.
 - **Navigation**: hash routes (`#/`, `#/games`, `#/review/<id>`) in `app/route.ts`, no router library. The play screen stays mounted (hidden) so a game in progress survives visiting other pages.
 - **Opening book**: Lichess `chess-openings` list (public domain/CC0), turned into `src/data/openings.json` by `scripts/build-openings.mjs` (committed; rerun the script to update). Keys are positions (FEN without move counters), so transpositions count. Value `[eco, name]` or `0` for an unnamed position on the way to a named line. Loaded lazily (~90 KB gzipped). Book = every position since the normal start is in the table; once out, the game stays out. Book moves get the `book` rating (set in `useGameAnalysis` via `bookPlies`), no coaching note, and no "best was". The play screen shows the opening name, how long it stayed in book, the book moves from the current position (folded away, only with live coaching on), and a note when your move left the book listing the book moves there. The opening and ECO are saved with bot games.
+- **Game phases (Phase 5)** (`review/gamePhase.ts`, settings in `config/phases.ts`): endgame when at most 6 queens/rooks/bishops/knights are left; opening while in book, or before half-move 20 with more than 10 such pieces; otherwise middlegame. Stored on each `PlyReview` as `phase`; older reviews are classed on the fly.
+- **Progress** (`progress/stats.ts`, `features/progress/`): only complete reviews count; book moves are excluded from losses. Losses by phase use average Win% lost per move (fair across phases of different length; the weakest phase needs at least 5 moves). Losses by kind of mistake use the coaching fact category of each mistake/blunder. Accuracy trend: one dot per reviewed game, rolling average of 5. "Review them now" runs `BatchReviewer`, which reuses `useGameReview` (shared with the review screen) one game at a time.
+- **Puzzles**: `scripts/build-puzzles.mjs` streams Lichess's puzzle CSV (CC0). Lichess compresses it with pzstd: many zstd frames, each preceded by a 12-byte skippable frame holding its size. Node's streaming zstd stops after the first frame, so the script splits frames itself and decompresses each with `zstdDecompressSync`. Keeps popular, well-tested puzzles (popularity >= 85, plays >= 1000, rating deviation <= 80), up to 20 per (theme, 200-point band) for 26 themes: about 3,800 puzzles, ~180 KB gzipped, lazy loaded. Format `[id, fen, moves, rating, themes]`; the first move is the opponent's set-up move.
+- **Puzzle trainer** (`puzzles/puzzle.ts`, `features/puzzles/`): the solution move or any mating move is accepted (like Lichess); wrong tries leave the board unchanged. Hint (glows the piece) and "show solution" count as not solved. Rating is Elo-style (K=32, starts at 1200), stored in the IndexedDB `meta` store; every attempt goes in `puzzleAttempts` (DB version 2). Themes: "your weak spots" mixes `recommendedThemes()` (themes mapped from your costliest mistake categories, then your weakest phase, then common tactics); each theme can be picked directly. Puzzles already tried are skipped.
+- **Navigation**: four sections (Play, Games, Progress, Puzzles). On screens up to 700px wide the tabs become a fixed bottom tab bar.
+- Board square styles use `backgroundImage` for dots/check gradients and `backgroundColor` for highlights; mixing the `background` shorthand with `backgroundColor` makes React warn.
 - Board: react-chessboard v5 (`options` prop). It has no built-in promotion dialog, so `PromotionPicker` is ours. Tap-to-move is supported for phones.
 
 ## Defaults chosen (user didn't answer these, change if wanted)
@@ -100,6 +108,14 @@ scripts/build-openings.mjs     rebuilds the opening table from Lichess's list
 src/features/games/            games list, Lichess import card, backup card
 src/features/review/           review screen, eval graph, move card, summary
 src/features/openings/         opening panel, "left the book" note
+src/config/phases.ts           opening/middlegame/endgame rules (edit to tune)
+src/review/gamePhase.ts        game phase of a position
+src/progress/stats.ts          progress statistics
+src/puzzles/                   puzzle play logic, theme mapping; data in src/data/puzzles.json
+scripts/build-puzzles.mjs      builds the puzzle subset
+src/storage/puzzleStore.ts     puzzle attempts and rating
+src/features/progress/         progress page, accuracy chart, background reviewer
+src/features/puzzles/          puzzle trainer
 src/features/play/             play screen, board + badge overlay, eval bar, coach card, player strips, game-over card, new game form, move list
 src/ui/styles.css              all styles, mobile-first, dark mode
 ```
@@ -110,7 +126,7 @@ src/ui/styles.css              all styles, mobile-first, dark mode
 - [x] Phase 2: analysis and move ratings
 - [x] Phase 3: coaching (pattern detectors, template notes, hints) and UI redesign
 - [x] Phase 4: game review, history, Lichess import, opening book
-- [ ] Phase 5: weaknesses, progress page, puzzles
+- [x] Phase 5: weaknesses, progress page, puzzles
 - [ ] Phase 6: Maia for human-like low levels
 
 ## Working agreement

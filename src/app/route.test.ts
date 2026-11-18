@@ -7,6 +7,10 @@ describe('routes', () => {
     expect(parseHash('#/')).toEqual({ name: 'play' })
     expect(parseHash('#/games')).toEqual({ name: 'games' })
     expect(parseHash('#/review/lichess%3Aabc')).toEqual({ name: 'review', id: 'lichess:abc' })
+    expect(parseHash('#/progress')).toEqual({ name: 'progress' })
+    expect(parseHash('#/puzzles')).toEqual({ name: 'puzzles' })
+    expect(parseHash('#/puzzles/fork')).toEqual({ name: 'puzzles', theme: 'fork' })
+    expect(routeHref({ name: 'puzzles', theme: 'mateIn2' })).toBe('#/puzzles/mateIn2')
     expect(parseHash('#/nonsense')).toEqual({ name: 'play' })
   })
 

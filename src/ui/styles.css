@@ -1988,3 +1988,469 @@ button.danger {
     font-size: 1.05rem;
   }
 }
+
+/* ============================================================
+   Phase 5: tabs with icons, progress page, puzzles
+   ============================================================ */
+
+.tabs a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tab-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Phones: the tabs become a bottom bar, like a native app. */
+@media (max-width: 700px) {
+  .app {
+    padding-bottom: calc(84px + env(safe-area-inset-bottom));
+  }
+  .tabs {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+    border-radius: 18px 18px 0 0;
+    border-bottom: none;
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.08);
+  }
+  .tabs a {
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 0;
+    border-radius: 12px;
+    font-size: 0.72rem;
+  }
+  .tabs a[aria-current='page'] {
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  .tab-icon {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+/* ---------- Progress ---------- */
+
+.stat-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+@media (min-width: 860px) {
+  .stat-tiles {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tile-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.tile-value {
+  font-size: 1.9rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.tile-sub {
+  font-size: 0.8rem;
+}
+
+.tile-sub.up {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.tile-sub.down {
+  color: var(--r-blunder);
+  font-weight: 700;
+}
+
+.unreviewed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.unreviewed p {
+  margin: 0;
+}
+
+.batch-review {
+  width: 100%;
+}
+
+.batch-review p {
+  margin: 0 0 8px;
+  font-weight: 600;
+}
+
+.progress-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 960px) {
+  .progress-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .chart-card {
+    grid-column: 1 / -1;
+  }
+}
+
+.chart-body {
+  display: flex;
+  gap: 8px;
+  height: 180px;
+  padding: 6px 0;
+}
+
+.chart-y {
+  position: relative;
+  width: 26px;
+  flex: none;
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-align: right;
+}
+
+.chart-y span {
+  position: absolute;
+  right: 0;
+  transform: translateY(-50%);
+}
+
+.chart-plot {
+  position: relative;
+  flex: 1;
+}
+
+.chart-plot svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.accuracy-chart .grid {
+  stroke: var(--border);
+  vector-effect: non-scaling-stroke;
+}
+
+.accuracy-chart .rolling {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 3;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.chart-dot {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  border: 2px solid var(--surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.chart-dot:hover {
+  transform: scale(1.3);
+}
+
+.chart-x {
+  display: flex;
+  justify-content: space-between;
+  padding-left: 34px;
+}
+
+.dot-bot {
+  fill: var(--r-great);
+  background: var(--r-great);
+}
+
+.dot-lichess {
+  fill: var(--r-book);
+  background: var(--r-book);
+}
+
+.chart-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 0;
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-left: 8px;
+}
+
+.legend-line {
+  display: inline-block;
+  width: 18px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+  margin-left: 8px;
+}
+
+.bars {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bars li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    'label value'
+    'track track'
+    'sub sub';
+  gap: 3px 10px;
+}
+
+.bar-label {
+  grid-area: label;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bar-value {
+  grid-area: value;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.bar-track {
+  grid-area: track;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 5px;
+  background: var(--r-great);
+}
+
+.bar-fill.warn {
+  background: var(--r-mistake);
+}
+
+.weakest .bar-fill {
+  background: var(--r-blunder);
+}
+
+.bar-sub {
+  grid-area: sub;
+  font-size: 0.8rem;
+}
+
+.flag {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--r-blunder) 14%, transparent);
+  color: var(--r-blunder);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.theme-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+a.chip {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+a.chip.active {
+  color: var(--accent);
+}
+
+.puzzle-record {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+
+.puzzle-record li {
+  display: flex;
+  justify-content: space-between;
+}
+
+/* ---------- Puzzles ---------- */
+
+.puzzle-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  box-shadow: var(--shadow);
+}
+
+.theme-picker {
+  margin-bottom: 14px;
+}
+
+.theme-select {
+  font-weight: 600;
+  padding-right: 8px;
+}
+
+.puzzle-layout {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 960px) {
+  .puzzle-layout {
+    grid-template-columns: minmax(0, 1fr) 380px;
+    gap: 28px;
+    align-items: start;
+  }
+}
+
+.puzzle-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.puzzle-prompt {
+  margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 1.1rem;
+}
+
+.side-chip {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+}
+
+.side-chip.side-w {
+  background: #fbfaf6;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+
+.side-chip.side-b {
+  background: #26231f;
+}
+
+.puzzle-feedback {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  animation: rise 0.25s ease both;
+}
+
+.fb-wrong {
+  background: color-mix(in srgb, var(--r-blunder) 12%, transparent);
+  color: var(--r-blunder);
+}
+
+.fb-correct,
+.fb-solved {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.fb-revealed {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--r-great);
+}
+
+.puzzle-result {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.puzzle-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.puzzle-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.puzzle-note {
+  margin: 10px 4px 0;
+}

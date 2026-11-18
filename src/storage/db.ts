@@ -1,5 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
-import type { GameRecord } from './types'
+import type { GameRecord, PuzzleAttempt } from './types'
 
 /**
  * Local database in the browser (IndexedDB). Nothing leaves the device.
@@ -11,10 +11,20 @@ interface GuruDB extends DBSchema {
     value: GameRecord
     indexes: { byEndedAt: number }
   }
+  puzzleAttempts: {
+    key: string
+    value: PuzzleAttempt
+    indexes: { byAt: number }
+  }
+  /** Small settings that must survive, e.g. the puzzle rating. */
+  meta: {
+    key: string
+    value: { key: string; value: unknown }
+  }
 }
 
 const DB_NAME = 'chess-guru'
-const DB_VERSION = 1
+const DB_VERSION = 2
 
 let dbPromise: Promise<IDBPDatabase<GuruDB>> | null = null
 
@@ -24,6 +34,11 @@ export function getDb(): Promise<IDBPDatabase<GuruDB>> {
       if (oldVersion < 1) {
         const games = db.createObjectStore('games', { keyPath: 'id' })
         games.createIndex('byEndedAt', 'endedAt')
+      }
+      if (oldVersion < 2) {
+        const attempts = db.createObjectStore('puzzleAttempts', { keyPath: 'id' })
+        attempts.createIndex('byAt', 'at')
+        db.createObjectStore('meta', { keyPath: 'key' })
       }
     },
   })

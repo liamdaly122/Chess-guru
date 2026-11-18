@@ -1,6 +1,7 @@
 import type { Color } from 'chess.js'
 import type { MoveRating } from '../chess/classify'
 import type { Score } from '../chess/score'
+import type { GamePhase } from './gamePhase'
 
 /** Broad groups of mistakes, used for the end-of-game lessons (and Phase 5 tracking). */
 export type LessonCategory =
@@ -39,6 +40,8 @@ export interface PlyReview {
   judgement?: PlyJudgement
   /** Only for the user's mistakes and blunders. */
   note?: { text: string; tip: string; category: LessonCategory }
+  /** Opening, middlegame or endgame (from the position before the move). Older reviews may lack it. */
+  phase?: GamePhase
 }
 
 export interface Lesson {

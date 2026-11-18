@@ -32,11 +32,12 @@ interface Props {
 
 const LAST_MOVE: CSSProperties = { backgroundColor: 'var(--last-move)' }
 const SELECTED: CSSProperties = { backgroundColor: 'var(--selected)' }
+// Gradients use backgroundImage so they can sit on top of a backgroundColor highlight.
 const CHECK: CSSProperties = {
-  background: 'radial-gradient(circle, rgba(239,68,68,0.95) 0%, rgba(239,68,68,0.45) 40%, transparent 72%)',
+  backgroundImage: 'radial-gradient(circle, rgba(239,68,68,0.95) 0%, rgba(239,68,68,0.45) 40%, transparent 72%)',
 }
-const DOT: CSSProperties = { background: 'radial-gradient(circle, var(--move-dot) 19%, transparent 21%)' }
-const RING: CSSProperties = { background: 'radial-gradient(circle, transparent 60%, var(--move-dot) 62%, var(--move-dot) 74%, transparent 76%)' }
+const DOT: CSSProperties = { backgroundImage: 'radial-gradient(circle, var(--move-dot) 19%, transparent 21%)' }
+const RING: CSSProperties = { backgroundImage: 'radial-gradient(circle, transparent 60%, var(--move-dot) 62%, var(--move-dot) 74%, transparent 76%)' }
 
 /** Position of a square on the board as percentages, for the overlay layer. */
 function squarePosition(square: Square, orientation: 'white' | 'black') {

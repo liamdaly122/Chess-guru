@@ -12,7 +12,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "oxlint",
-    "postinstall": "node scripts/copy-engine.mjs"
+    "postinstall": "node scripts/copy-engine.mjs",
+    "build:openings": "node scripts/build-openings.mjs",
+    "build:puzzles": "node scripts/build-puzzles.mjs"
   },
   "dependencies": {
     "chess.js": "^1.4.0",

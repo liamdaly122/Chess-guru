@@ -1,7 +1,17 @@
-import { routeHref, useRoute } from './app/route'
+import { routeHref, useRoute, type Route } from './app/route'
 import { GamesScreen } from './features/games/GamesScreen'
 import { PlayScreen } from './features/play/PlayScreen'
+import { ProgressScreen } from './features/progress/ProgressScreen'
+import { PuzzlesScreen } from './features/puzzles/PuzzlesScreen'
 import { ReviewScreen } from './features/review/ReviewScreen'
+import { BoardIcon, ChartIcon, ListIcon, TargetIcon } from './ui/icons'
+
+const TABS: { route: Route; label: string; icon: typeof BoardIcon }[] = [
+  { route: { name: 'play' }, label: 'Play', icon: BoardIcon },
+  { route: { name: 'games' }, label: 'Games', icon: ListIcon },
+  { route: { name: 'progress' }, label: 'Progress', icon: ChartIcon },
+  { route: { name: 'puzzles' }, label: 'Puzzles', icon: TargetIcon },
+]
 
 export default function App() {
   const route = useRoute()
@@ -18,13 +28,14 @@ export default function App() {
             Chess <span>Guru</span>
           </span>
         </a>
+        {/* Top tabs on wide screens, a bottom tab bar on phones (same element, styled by CSS). */}
         <nav className="tabs" aria-label="Sections">
-          <a href={routeHref({ name: 'play' })} aria-current={tab === 'play' ? 'page' : undefined}>
-            Play
-          </a>
-          <a href={routeHref({ name: 'games' })} aria-current={tab === 'games' ? 'page' : undefined}>
-            Games
-          </a>
+          {TABS.map(({ route: r, label, icon: Icon }) => (
+            <a key={label} href={routeHref(r)} aria-current={tab === r.name ? 'page' : undefined}>
+              <Icon className="tab-icon" />
+              <span>{label}</span>
+            </a>
+          ))}
         </nav>
       </header>
       <main>
@@ -34,6 +45,8 @@ export default function App() {
         </div>
         {route.name === 'games' && <GamesScreen />}
         {route.name === 'review' && <ReviewScreen id={route.id} />}
+        {route.name === 'progress' && <ProgressScreen />}
+        {route.name === 'puzzles' && <PuzzlesScreen theme={route.theme} />}
       </main>
     </div>
   )

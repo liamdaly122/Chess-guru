@@ -41,4 +41,18 @@ export interface GameRecord {
   pgn?: string
 }
 
+/** One try at a puzzle. */
+export interface PuzzleAttempt {
+  /** "<puzzle id>:<time>" */
+  id: string
+  puzzleId: string
+  at: number
+  /** Solved with no wrong moves and without showing the solution. */
+  solved: boolean
+  themes: string[]
+  puzzleRating: number
+  ratingBefore: number
+  ratingAfter: number
+}
+
 export const STANDARD_START = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'

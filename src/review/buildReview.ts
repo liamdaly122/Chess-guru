@@ -6,6 +6,7 @@ import { lineToSan } from '../coach/facts'
 import { uciToSan } from '../chess/moves'
 import type { PositionAnalysis } from '../engine/uciInfo'
 import { buildLessons, categoryOf } from './lessons'
+import { gamePhase } from './gamePhase'
 import type { GameReview, PlyReview } from './types'
 
 /**
@@ -29,9 +30,18 @@ export function buildReview(
   const plies: PlyReview[] = history.map((m, i) => {
     const evalAfter = evalOf(m.after)
     if (!evalAfter) complete = false
-    const p: PlyReview = { san: m.san, uci: m.lan, color: m.color, fenBefore: m.before, fenAfter: m.after, evalAfter }
-
     const r = ratings[i]
+    const book = !!r && r !== 'pending' && r.rating === 'book'
+    const p: PlyReview = {
+      san: m.san,
+      uci: m.lan,
+      color: m.color,
+      fenBefore: m.before,
+      fenAfter: m.after,
+      evalAfter,
+      phase: gamePhase(m.before, i, book),
+    }
+
     if (r === 'pending') complete = false
     if (r && r !== 'pending' && m.color === userColor) {
       p.judgement = {

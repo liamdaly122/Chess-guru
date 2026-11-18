@@ -92,6 +92,43 @@ export const BookIcon = (p: IconProps) => (
   </Icon>
 )
 
+export const BoardIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
+  </Icon>
+)
+
+export const ListIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M8 6h13M8 12h13M8 18h13" />
+    <circle cx="3.5" cy="6" r="1" />
+    <circle cx="3.5" cy="12" r="1" />
+    <circle cx="3.5" cy="18" r="1" />
+  </Icon>
+)
+
+export const ChartIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M3 3v18h18" />
+    <path d="m7 15 4-5 3 3 5-7" />
+  </Icon>
+)
+
+export const TargetIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <circle cx="12" cy="12" r="5" />
+    <circle cx="12" cy="12" r="1.5" />
+  </Icon>
+)
+
+export const CheckIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="m5 12 5 5 9-10" />
+  </Icon>
+)
+
 export const CapIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="M2 9 12 4l10 5-10 5L2 9Z" />
