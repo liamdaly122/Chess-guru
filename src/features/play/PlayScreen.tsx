@@ -1,13 +1,16 @@
 import type { Chess, Color, Move, Square } from 'chess.js'
 import { useEffect, useMemo, useState } from 'react'
 import { latestEval, useGameAnalysis, type PlyRating } from '../../analysis/useGameAnalysis'
-import { describeStatus } from '../../chess/gameStatus'
+import { describeStatus, type GameStatus } from '../../chess/gameStatus'
 import { materialSummary } from '../../chess/material'
 import { COACH } from '../../config/coach'
 import { Modal } from '../../ui/Modal'
 import { Switch } from '../../ui/Switch'
 import { BulbIcon, FlipIcon, PlusIcon, SettingsIcon, UndoIcon } from '../../ui/icons'
+import { CoachBubble } from './CoachBubble'
 import { CoachCard } from './CoachCard'
+import { coachMessage } from './coachMessage'
+import { MoveStrip } from './MoveStrip'
 import { EvalBar } from './EvalBar'
 import { GameBoard, type BoardBadge } from './GameBoard'
 import { GameOverCard } from './GameOverCard'
@@ -93,10 +96,31 @@ export function PlayScreen() {
 
   const showGameOver = play.status.over && dismissedGameOver !== play.history.length
   const evalScore = latestEval(analysis.snapshot, play.positions)
+  const badgeRatings = analysis.ratings.map((r) => (r && r !== 'pending' ? r.rating : r))
+  const bookNote = showRatings
+    ? leftBookNote(openingInfo, play.history, lastUserPly(play.history, play.userColor), play.userColor)
+    : null
+  const coach = coachMessage({
+    history: play.history,
+    ratings: analysis.ratings,
+    notes: analysis.notes,
+    liveCoaching: prefs.liveCoaching,
+    gameOver,
+    resultText: play.status.over ? resultText(play.status, play.userColor) : undefined,
+    hint,
+    hintStep,
+    botNote: maiaNote,
+    bookNote,
+  })
 
   return (
     <div className="play-screen">
       <section className="board-area">
+        {/* Phones only: coach and moves above the board, like Chess.com. */}
+        <div className="mobile-only mobile-top">
+          <CoachBubble message={coach} />
+          <MoveStrip history={play.history} ratings={badgeRatings} hideRatings={!showRatings} />
+        </div>
         <PlayerStrip
           kind="bot"
           name={play.engineName}
@@ -149,7 +173,7 @@ export function PlayScreen() {
 
       <aside className="side-area">
         {maiaNote && (
-          <p className={`card maia-note ${play.maiaStatus.state}`} role="status" data-testid="maia-note">
+          <p className={`card maia-note desktop-only ${play.maiaStatus.state}`} role="status" data-testid="maia-note">
             {maiaNote}
           </p>
         )}
@@ -184,6 +208,7 @@ export function PlayScreen() {
         </nav>
 
         <CoachCard
+          className={gameOver ? '' : 'desktop-only'}
           history={play.history}
           ratings={analysis.ratings}
           notes={analysis.notes}
@@ -194,7 +219,7 @@ export function PlayScreen() {
           hint={analysis.hint}
           hintStep={hintStep}
           onHint={nextHint}
-          bookNote={showRatings ? leftBookNote(openingInfo, play.history, lastUserPly(play.history, play.userColor), play.userColor) : null}
+          bookNote={bookNote}
         />
 
         <OpeningPanel
@@ -203,11 +228,11 @@ export function PlayScreen() {
           movesFrom={prefs.liveCoaching && play.isUserTurn ? play.fen : null}
         />
 
-        <section className="card moves-card" aria-label="Moves">
+        <section className="card moves-card desktop-only" aria-label="Moves">
           <h2 className="card-title">Moves</h2>
           <MoveList
             history={play.history}
-            ratings={analysis.ratings.map((r) => (r && r !== 'pending' ? r.rating : r))}
+            ratings={badgeRatings}
             hideRatings={!showRatings}
             hintedPlies={play.hintedPlies}
           />
@@ -276,4 +301,10 @@ function lastUserBadge(history: Move[], ratings: PlyRating[], userColor: Color, 
 function lastUserPly(history: Move[], userColor: Color): number {
   for (let i = history.length - 1; i >= 0; i--) if (history[i].color === userColor) return i
   return -1
+}
+
+function resultText(status: Extract<GameStatus, { over: true }>, userColor: Color): string {
+  const how = status.reason === 'checkmate' ? 'by checkmate' : `by ${status.reason}`
+  if (status.winner === null) return `Draw ${how}`
+  return status.winner === userColor ? `You won ${how}` : `You lost ${how}`
 }

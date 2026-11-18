@@ -19,7 +19,7 @@ export default function App() {
   const tab = route.name === 'review' ? 'games' : route.name
 
   return (
-    <div className="app">
+    <div className={`app route-${route.name}`}>
       <header className="app-header">
         <a className="brand" href="#/">
           <span className="brand-mark" aria-hidden>

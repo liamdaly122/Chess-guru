@@ -20,13 +20,14 @@ interface Props {
   onHint: () => void
   /** Shown under the verdict when your last move left the opening book. */
   bookNote?: string | null
+  className?: string
 }
 
 /** The coach's panel: rating and explanation of your last move, hints, and the end-of-game summary. */
 export function CoachCard(props: Props) {
   const { gameOver, liveCoaching, hintMode, isUserTurn } = props
   return (
-    <section className="card coach-card" aria-label="Coach" data-testid="coach">
+    <section className={`card coach-card ${props.className ?? ''}`} aria-label="Coach" data-testid="coach">
       <header className="coach-head">
         <span className="coach-avatar" aria-hidden>
           <CapIcon />

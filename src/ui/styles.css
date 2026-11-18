@@ -2519,3 +2519,292 @@ a.chip.active {
     margin-top: 4px;
   }
 }
+
+/* ============================================================
+   Phones: coach above a full-width board (like Chess.com)
+   ============================================================ */
+
+.mobile-only {
+  display: none;
+}
+
+.coach-bubble-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.coach-bubble-avatar {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: linear-gradient(145deg, var(--accent), #1f6b44);
+  color: #fff;
+  box-shadow: 0 3px 10px var(--accent-soft);
+}
+
+.coach-bubble {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  /* Room for three lines so the board doesn't jump as messages change length. */
+  min-height: calc(3 * 1.35em + 18px);
+  padding: 9px 12px;
+  border-radius: 4px 16px 16px 16px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  text-align: left;
+  font-weight: 400;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  animation: rise 0.25s ease both;
+}
+
+.coach-bubble:active:not(:disabled) {
+  transform: none;
+}
+
+.coach-bubble-badge {
+  margin-top: 1px;
+}
+
+.coach-bubble-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.coach-bubble.expanded .coach-bubble-text {
+  display: block;
+  -webkit-line-clamp: unset;
+}
+
+.coach-bubble-more {
+  display: block;
+  margin-top: 4px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.coach-bubble-hint {
+  position: absolute;
+  right: 10px;
+  bottom: 6px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.tone-bg-hint {
+  border-left-color: rgba(59, 130, 246, 0.9);
+  background: color-mix(in srgb, rgba(59, 130, 246, 1) 8%, var(--surface));
+}
+.tone-bg-mistake {
+  border-left-color: var(--r-mistake);
+}
+.tone-bg-blunder {
+  border-left-color: var(--r-blunder);
+}
+.tone-bg-inaccuracy {
+  border-left-color: var(--r-inaccuracy);
+}
+.tone-bg-best,
+.tone-bg-great,
+.tone-bg-brilliant,
+.tone-bg-good {
+  border-left-color: var(--r-best);
+}
+.tone-bg-book {
+  border-left-color: var(--r-book);
+}
+
+.move-strip {
+  display: flex;
+  gap: 10px;
+  margin: 0;
+  padding: 2px 2px 4px;
+  list-style: none;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
+  font-size: 0.88rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.move-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.move-strip li {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.strip-no {
+  color: var(--muted);
+}
+
+.strip-san {
+  font-weight: 600;
+}
+
+.move-strip li.last .strip-san {
+  padding: 0 5px;
+  border-radius: 5px;
+  background: var(--accent-soft);
+}
+
+@media (max-width: 700px) {
+  .mobile-only {
+    display: block;
+  }
+  .desktop-only {
+    display: none !important;
+  }
+
+  .app {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  /* The coach replaces the logo bar on the Play screen (the tabs stay: they are fixed at the bottom). */
+  .route-play .app-header {
+    height: 0;
+    margin: 0;
+  }
+  .route-play .app-header .brand {
+    display: none;
+  }
+  .route-play.app {
+    padding-top: 6px;
+  }
+
+  /* Two lines on phones; tap "More" for the rest. */
+  .coach-bubble {
+    min-height: calc(2 * 1.35em + 16px);
+    padding: 7px 12px;
+    font-size: 0.88rem;
+  }
+  .coach-bubble-text {
+    -webkit-line-clamp: 2;
+  }
+  .coach-bubble-avatar {
+    width: 34px;
+    height: 34px;
+  }
+  .coach-bubble-avatar svg {
+    width: 18px;
+    height: 18px;
+  }
+  .move-strip {
+    padding: 0 2px 2px;
+    font-size: 0.82rem;
+  }
+
+  .mobile-top {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0 12px;
+  }
+
+  /* Board edge to edge. */
+  .play-screen {
+    gap: 8px;
+  }
+  .play-screen .board-area {
+    width: auto;
+    margin: 0 -12px;
+    gap: 2px;
+    --board-radius: 0px;
+  }
+  .play-screen .board-row {
+    gap: 0;
+  }
+  .play-screen .board-wrap {
+    box-shadow: none;
+  }
+  .play-screen .eval-bar {
+    flex-basis: 7px;
+    border-radius: 0;
+  }
+  .play-screen .eval-label {
+    display: none;
+  }
+
+  /* Slimmer player strips. */
+  .play-screen .player-strip {
+    min-height: 34px;
+    padding: 1px 12px;
+    gap: 8px;
+  }
+  .play-screen .avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+  }
+  .play-screen .avatar svg {
+    width: 17px;
+    height: 17px;
+  }
+  .play-screen .player-name {
+    font-size: 0.92rem;
+  }
+  .play-screen .player-detail {
+    font-size: 0.78rem;
+  }
+
+  .play-screen .side-area {
+    gap: 10px;
+  }
+  .play-screen .action-bar {
+    padding: 3px;
+  }
+  .play-screen .action {
+    min-height: 44px;
+    padding: 3px 2px;
+    gap: 1px;
+    font-size: 0.66rem;
+  }
+  .play-screen .action svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+@media (max-width: 700px) {
+  /* A slightly shorter tab bar leaves room for the game controls above it. */
+  .tabs {
+    padding: 4px 8px calc(4px + env(safe-area-inset-bottom));
+  }
+  .tabs a {
+    padding: 4px 0;
+    font-size: 0.68rem;
+  }
+  .tab-icon {
+    width: 20px;
+    height: 20px;
+  }
+  .app {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Keep the "More" label clear of the text. */
+.coach-bubble.has-more {
+  padding-right: 52px;
+}
