@@ -118,6 +118,11 @@ export function usePlayGame() {
   const game = useMemo(() => replay(state.startFen, state.moves), [state.startFen, state.moves])
   const status = useMemo(() => getGameStatus(game), [game])
   const history = useMemo<Move[]>(() => game.history({ verbose: true }), [game])
+  /** Every position in the game, start to now, as FENs. Used by the analyser. */
+  const positions = useMemo(
+    () => (history.length ? [history[0].before, ...history.map((m) => m.after)] : [game.fen()]),
+    [game, history],
+  )
   const isUserTurn = !status.over && game.turn() === state.userColor
   // The bot is always working on a move when it is its turn and the engine is loaded.
   const botThinking = ready && !status.over && !isUserTurn
@@ -201,6 +206,7 @@ export function usePlayGame() {
     game,
     fen: game.fen(),
     history,
+    positions,
     status,
     userColor: state.userColor,
     level: state.level,

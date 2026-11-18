@@ -36,6 +36,13 @@ Testing tip: open `http://localhost:5173/?fen=<FEN>` to start a game from any po
 - The opponent sits behind `OpponentEngine` (`src/engine/OpponentEngine.ts`). Maia will implement the same interface.
 - Game state is a list of UCI moves (plus an optional start FEN). The chess.js game is rebuilt from it with `useMemo`, so undo, threefold repetition and the move list all come from one source.
 - Undo takes back your move and the bot's reply (or just your move if the bot hasn't replied). Each undo increments a `takebacks` counter, kept for later phases (games with takebacks should be marked, and undone moves should not count in stats).
+- **Analysis (Phase 2):** a second Stockfish worker at full strength (`src/engine/Analyser.ts`) analyses every position of the game in order, through `src/analysis/AnalysisQueue.ts`. Results are cached by FEN, so undo and replay don't redo work. Positions that drop out of the game are skipped and their search stopped. Settings (depth 16, 4 s cap, MultiPV 2) live in `src/config/analysis.ts`. Depth 16 measured at 0.4 to 0.8 s per position on a laptop; phones are slower, hence the time cap.
+- Never send an engine a position chess.js hasn't validated. An illegal FEN (e.g. side not to move in check) crashes the Stockfish WASM worker.
+- The analyser is given only the FEN, not the move history, so it can't see threefold repetition. Acceptable for ratings.
+- **Scores** (`src/chess/score.ts`): `{ kind: 'cp' }` or `{ kind: 'mate', moves, forUs }`. "mate 0" from UCI means the side to move is checkmated; storing who mates (not a signed number) avoids the +0/-0 problem.
+- **Win% and ratings** follow Lichess: Win% = 50 + 50 * (2 / (1 + e^(-0.00368208 * cp)) - 1), cp capped at +/-1000, mate in N counted as (21 - min(N, 10)) * 100 cp. Rating by Win% drop: 5 inaccuracy, 10 mistake, 15 blunder (Lichess's 0.1/0.2/0.3 on its -1..1 scale). Plus Lichess's mate rules: allowing a forced mate is a blunder (mistake below -7, inaccuracy below -10); missing a forced mate is a blunder (mistake if still above +7, inaccuracy if above +10). The worse of the two ratings is used. The engine's top move is always "best"; delivering checkmate is always "best". Thresholds in `src/config/analysis.ts`.
+- Ratings are derived (not stored) from the analysis cache and the move list, so undone moves simply disappear.
+- The eval bar uses Win% for its fill, like Lichess. It can be hidden (setting stored in localStorage).
 - Board: react-chessboard v5 (`options` prop). It has no built-in promotion dialog, so `PromotionPicker` is ours. Tap-to-move is supported for phones.
 
 ## Defaults chosen (user didn't answer these, change if wanted)
@@ -54,15 +61,21 @@ src/engine/uciEngine.ts        UCI over a Web Worker, queued commands
 src/engine/OpponentEngine.ts   opponent interface
 src/engine/StockfishOpponent.ts
 src/chess/gameStatus.ts        mate, stalemate, draws
-src/chess/moves.ts             UCI parsing, undo logic
-src/features/play/             play screen, board, promotion picker, move list, new game panel
+src/chess/moves.ts             UCI parsing, UCI to SAN, undo logic
+src/chess/score.ts             evaluation type, Win% (Lichess formula), formatting
+src/chess/classify.ts          move ratings
+src/config/analysis.ts         analysis depth, rating thresholds, mate rules (edit to tune)
+src/engine/uciInfo.ts          parses engine "info" lines
+src/engine/Analyser.ts         full-strength analysis engine
+src/analysis/                  analysis queue and the React hook that rates moves
+src/features/play/             play screen, board, eval bar, move feedback, promotion picker, move list, new game panel
 src/ui/styles.css              all styles, mobile-first, dark mode
 ```
 
 ## Phase status
 
 - [x] Phase 1: play against a bot
-- [ ] Phase 2: analysis and move ratings
+- [x] Phase 2: analysis and move ratings
 - [ ] Phase 3: coaching (pattern detectors, template notes, hints)
 - [ ] Phase 4: game review, history, Lichess import
 - [ ] Phase 5: weaknesses, progress page, puzzles

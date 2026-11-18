@@ -1,4 +1,4 @@
-import type { Color, Square } from 'chess.js'
+import { Chess, type Color, type Square } from 'chess.js'
 
 export interface MoveInput {
   from: Square
@@ -32,4 +32,13 @@ export function plyToUndo(historyLength: number, turn: Color, userColor: Color):
   }
   // Last move was the user's.
   return 1
+}
+
+/** Convert a UCI move to standard notation (e.g. "g1f3" -> "Nf3") in the given position. */
+export function uciToSan(fen: string, uci: string): string | null {
+  try {
+    return new Chess(fen).move(parseUci(uci)).san
+  } catch {
+    return null
+  }
 }
