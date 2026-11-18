@@ -13,11 +13,13 @@ import { coachMessage } from './coachMessage'
 import { MoveStrip } from './MoveStrip'
 import { EvalBar } from './EvalBar'
 import { GameBoard, type BoardBadge } from './GameBoard'
-import { GameOverCard } from './GameOverCard'
+import { GameOverCard, type NextLevel } from './GameOverCard'
 import { MoveList } from './MoveList'
 import { NewGameForm } from './NewGameForm'
 import { PlayerStrip } from './PlayerStrip'
-import { loadSettings, usePlayGame } from './usePlayGame'
+import { loadSettings, saveSettings, usePlayGame } from './usePlayGame'
+import { nextLevelRating } from '../../rating/adaptive'
+import { findLevel } from '../../config/levels'
 import { usePreferences } from './usePreferences'
 import { AboutSection } from '../settings/AboutSection'
 import { InstallSection } from '../settings/InstallSection'
@@ -66,6 +68,30 @@ export function PlayScreen() {
   const botColor = play.userColor === 'w' ? 'b' : 'w'
   const gameOver = play.status.over
   const showRatings = prefs.liveCoaching || gameOver
+
+  // Adaptive bot: after a finished game (one you moved in, from the normal start), the next
+  // game's level goes up after a win and down after a loss.
+  const userMoved = play.history.some((m) => m.color === play.userColor)
+  const adaptiveRating =
+    play.status.over && userMoved && !play.startFen && loadSettings().adaptive
+      ? nextLevelRating(
+          play.level.rating,
+          play.status.winner === null ? 'draw' : play.status.winner === play.userColor ? 'win' : 'loss',
+          play.takebacks,
+        )
+      : null
+  const nextLevel: NextLevel | null =
+    adaptiveRating === null
+      ? null
+      : {
+          rating: adaptiveRating,
+          label: findLevel(adaptiveRating).label,
+          change: adaptiveRating > play.level.rating ? 'up' : adaptiveRating < play.level.rating ? 'down' : 'same',
+        }
+  // Remember it, so the New game sheet starts from the new level too.
+  useEffect(() => {
+    if (adaptiveRating !== null) saveSettings({ ...loadSettings(), levelRating: adaptiveRating })
+  }, [adaptiveRating, play.uid])
 
   // Badge on the square your last move landed on, until your next move (hidden if the bot captured it).
   const badge = showRatings ? lastUserBadge(play.history, analysis.ratings, play.userColor, play.game) : null
@@ -151,8 +177,9 @@ export function PlayScreen() {
                 status={play.status}
                 userColor={play.userColor}
                 onReview={() => navigate({ name: 'review', id: play.uid })}
+                next={nextLevel}
                 onRematch={() => {
-                  play.rematch()
+                  play.rematch(nextLevel?.rating)
                   setFlipped(false)
                 }}
                 onNewGame={() => setModal('new')}

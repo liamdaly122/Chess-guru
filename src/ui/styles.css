@@ -3384,3 +3384,82 @@ a.chip.active {
 .new-games-banner .icon-button {
   flex: none;
 }
+
+/* ============================================================
+   Rating estimate and adaptive bot
+   ============================================================ */
+
+.level-suggestion {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 4px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  font-size: 0.9rem;
+}
+
+.level-suggestion .chip {
+  flex: none;
+  background: var(--surface);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.next-level {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.next-level.change-up {
+  color: var(--accent);
+}
+
+.next-level.change-down {
+  color: var(--r-mistake);
+}
+
+.strength-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 24px;
+  margin-bottom: 14px;
+}
+
+.strength-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.strength-value {
+  font-size: 2.2rem;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.strength-range {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.strength-detail {
+  flex: 1;
+  min-width: 220px;
+}
+
+.strength-detail p {
+  margin: 0;
+}
+
+.strength-detail .lichess-ratings {
+  margin-top: 6px;
+  font-weight: 600;
+}

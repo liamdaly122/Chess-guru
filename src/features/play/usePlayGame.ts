@@ -13,6 +13,8 @@ export type ColourChoice = 'w' | 'b' | 'random'
 export interface GameSettings {
   colour: ColourChoice
   levelRating: number
+  /** Move the bot up a level after a win and down after a loss. */
+  adaptive?: boolean
 }
 
 interface GameState {
@@ -49,7 +51,7 @@ export function loadSettings(): GameSettings {
   return DEFAULT_SETTINGS
 }
 
-function saveSettings(s: GameSettings) {
+export function saveSettings(s: GameSettings) {
   try {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(s))
   } catch {
@@ -255,9 +257,9 @@ export function usePlayGame({ holdBot = false }: PlayOptions = {}) {
     setState((prev) => freshGame(prev.id + 1, resolveColour(settings.colour), findLevel(settings.levelRating)))
   }, [])
 
-  /** Same colour and level again. */
-  const rematch = useCallback(() => {
-    setState((prev) => freshGame(prev.id + 1, prev.userColor, prev.level))
+  /** Same colour again, at the same level (or the one given, for the adaptive bot). */
+  const rematch = useCallback((levelRating?: number) => {
+    setState((prev) => freshGame(prev.id + 1, prev.userColor, levelRating ? findLevel(levelRating) : prev.level))
   }, [])
 
   const resign = useCallback(() => {

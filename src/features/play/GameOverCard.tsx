@@ -2,6 +2,13 @@ import type { Color } from 'chess.js'
 import type { GameStatus } from '../../chess/gameStatus'
 import { CloseIcon } from '../../ui/icons'
 
+/** The adaptive bot's level for the next game. */
+export interface NextLevel {
+  rating: number
+  label: string
+  change: 'up' | 'down' | 'same'
+}
+
 interface Props {
   status: Extract<GameStatus, { over: true }>
   userColor: Color
@@ -9,10 +16,11 @@ interface Props {
   onRematch: () => void
   onNewGame: () => void
   onClose: () => void
+  next?: NextLevel | null
 }
 
 /** Result card laid over the board when the game ends. */
-export function GameOverCard({ status, userColor, onReview, onRematch, onNewGame, onClose }: Props) {
+export function GameOverCard({ status, userColor, onReview, onRematch, onNewGame, onClose, next }: Props) {
   const outcome = status.winner === null ? 'draw' : status.winner === userColor ? 'win' : 'loss'
   const title = outcome === 'win' ? 'You won!' : outcome === 'loss' ? 'You lost' : 'Draw'
   const reason = status.reason === 'checkmate' ? 'by checkmate' : `by ${status.reason}`
@@ -26,12 +34,21 @@ export function GameOverCard({ status, userColor, onReview, onRematch, onNewGame
         <p className="game-over-result">{status.result.replace('1/2', '½')}</p>
         <h2>{title}</h2>
         <p className="muted">{reason}</p>
+        {next && (
+          <p className={`next-level change-${next.change}`} data-testid="next-level">
+            {next.change === 'up' ? '▲ Next game: ' : next.change === 'down' ? '▼ Next game: ' : 'Next game: '}
+            <strong>
+              {next.rating} {next.label}
+            </strong>
+            {next.change === 'same' ? ' again' : ''}
+          </p>
+        )}
         <button type="button" className="primary wide game-over-review" onClick={onReview}>
           Review game
         </button>
         <div className="game-over-actions">
           <button type="button" onClick={onRematch}>
-            Rematch
+            {next ? `Play ${next.rating}` : 'Rematch'}
           </button>
           <button type="button" onClick={onNewGame}>
             New game

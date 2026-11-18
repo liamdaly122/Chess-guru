@@ -1,6 +1,9 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { LEVELS } from '../../config/levels'
+import { ratingSummary, suggestedLevel } from '../../rating/estimate'
+import { useGames } from '../../storage/useGames'
 import { ShuffleIcon } from '../../ui/icons'
+import { Switch } from '../../ui/Switch'
 import type { ColourChoice, GameSettings } from './usePlayGame'
 
 interface Props {
@@ -33,7 +36,11 @@ export function NewGameForm({ initial, onStart, inProgress, onResign }: Props) {
     LEVELS.findIndex((l) => l.rating === initial.levelRating),
   )
   const [index, setIndex] = useState(startIndex)
+  const [adaptive, setAdaptive] = useState(!!initial.adaptive)
   const level = LEVELS[index]
+  const games = useGames()
+  const estimate = useMemo(() => (games ? ratingSummary(games).estimate : null), [games])
+  const suggestion = estimate ? suggestedLevel(estimate.rating) : null
 
   return (
     <div className="new-game">
@@ -76,11 +83,29 @@ export function NewGameForm({ initial, onStart, inProgress, onResign }: Props) {
         <span>{LEVELS[LEVELS.length - 1].rating}</span>
       </div>
       <p className="muted level-band">{bandText(level)} Ratings are approximate.</p>
+      {estimate && suggestion && (
+        <p className="level-suggestion" data-testid="level-suggestion">
+          <span>
+            Your rating: about <strong>{estimate.rating}</strong>
+          </span>
+          {suggestion.rating !== level.rating && (
+            <button type="button" className="chip" onClick={() => setIndex(LEVELS.indexOf(suggestion))}>
+              Play at {suggestion.rating}
+            </button>
+          )}
+        </p>
+      )}
+      <Switch
+        label="Adjust the level after each game"
+        description="Up a level after a win, down after a loss."
+        checked={adaptive}
+        onChange={setAdaptive}
+      />
 
       {inProgress && (
         <p className="resign-note">Starting a new game counts the current one as a loss (resigned). It is saved to your games.</p>
       )}
-      <button type="button" className="primary wide" onClick={() => onStart({ colour, levelRating: level.rating })}>
+      <button type="button" className="primary wide" onClick={() => onStart({ colour, levelRating: level.rating, adaptive })}>
         Start game
       </button>
       {inProgress && onResign && (

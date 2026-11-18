@@ -13,6 +13,8 @@ import { drillStats } from '../../openings/drill'
 import { useOpeningDrills } from '../../storage/openingStore'
 import { AccuracyChart } from './AccuracyChart'
 import { queueReviews, useReviewQueue } from '../../review/reviewQueue'
+import { RATING } from '../../config/rating'
+import { lichessRatings, puzzleStartRating, ratingSummary } from '../../rating/estimate'
 
 type Filter = 'all' | 'bot' | 'lichess'
 
@@ -40,6 +42,9 @@ export function ProgressScreen() {
 
   const filtered = useMemo(() => (games ?? []).filter((g) => filter === 'all' || g.source === filter), [games, filter])
   const stats = useMemo(() => progressStats(filtered), [filtered])
+  // The rating estimate always uses every bot game, whatever the filter.
+  const strength = useMemo(() => ratingSummary(games ?? []), [games])
+  const lichess = useMemo(() => lichessRatings(games ?? []), [games])
   const unreviewed = filtered.filter((g) => !g.review?.complete)
   const themes = recommendedThemes(stats)
 
@@ -69,6 +74,36 @@ export function ProgressScreen() {
         </div>
       </div>
 
+      <section className="card strength-card" data-testid="strength">
+        <div className="strength-main">
+          <span className="tile-label">Estimated rating</span>
+          <span className="strength-value">
+            {strength.estimate ? strength.estimate.rating : '–'}
+            {strength.estimate && <span className="strength-range"> ± {strength.estimate.plusMinus}</span>}
+          </span>
+          {strength.trend !== null && (
+            <span className={`tile-sub ${strength.trend > 0 ? 'up' : strength.trend < 0 ? 'down' : 'muted'}`}>
+              {strength.trend === 0
+                ? `same as ${RATING.trendGames} games ago`
+                : `${strength.trend > 0 ? '▲' : '▼'} ${Math.abs(strength.trend)} in your last ${RATING.trendGames} games`}
+            </span>
+          )}
+        </div>
+        <div className="strength-detail">
+          <p className="muted small">
+            {strength.estimate
+              ? `From your last ${strength.estimate.games} games against the bot (${strength.estimate.wins} won, ${strength.estimate.draws} drawn, ${strength.estimate.losses} lost), using the bot levels as ratings.`
+              : `Play ${RATING.minGames - strength.counted} more game${RATING.minGames - strength.counted === 1 ? '' : 's'} against the bot to get an estimate.`}{' '}
+            Games with takebacks or hints don't count.
+          </p>
+          {lichess.length > 0 && (
+            <p className="small lichess-ratings" data-testid="lichess-ratings">
+              Lichess: {lichess.map((l) => `${l.speed} ${l.rating}`).join(' · ')}
+            </p>
+          )}
+        </div>
+      </section>
+
       <div className="stat-tiles" data-testid="stat-tiles">
         <div className="card tile">
           <span className="tile-label">Accuracy</span>
@@ -95,7 +130,9 @@ export function ProgressScreen() {
         </div>
         <div className="card tile">
           <span className="tile-label">Puzzle rating</span>
-          <span className="tile-value">{puzzles?.rating ?? '–'}</span>
+          <span className="tile-value">
+            {puzzles ? puzzleStartRating(puzzles.rating, puzzles.attempts.length, strength.estimate) : '–'}
+          </span>
           <span className="tile-sub muted">{puzzles ? `${puzzles.attempts.length} puzzles tried` : ''}</span>
         </div>
       </div>

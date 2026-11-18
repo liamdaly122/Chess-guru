@@ -15,6 +15,7 @@ import {
   type PuzzleState,
 } from '../../puzzles/puzzle'
 import { recommendedThemes, THEME_LABEL } from '../../puzzles/themes'
+import { puzzleStartRating, ratingSummary } from '../../rating/estimate'
 import { recordAttempt } from '../../storage/puzzleStore'
 import { usePuzzleData } from '../../storage/usePuzzleData'
 import { useGames } from '../../storage/useGames'
@@ -47,6 +48,9 @@ export function PuzzlesScreen({ theme }: { theme?: string }) {
   const mistakeMode = theme === MISTAKES
   const openingMode = theme === OPENINGS || theme === OPENING_LINES
   const recommended = useMemo(() => recommendedThemes(games ? progressStats(games) : null), [games])
+  const estimate = useMemo(() => (games ? ratingSummary(games).estimate : null), [games])
+  // Before your first puzzle, start from your estimated playing rating.
+  const rating = data ? puzzleStartRating(data.rating, data.attempts.length, estimate) : null
 
   useEffect(() => {
     let live = true
@@ -126,7 +130,7 @@ export function PuzzlesScreen({ theme }: { theme?: string }) {
       <div className="games-head">
         <h1>Train</h1>
         <span className="puzzle-rating" data-testid="puzzle-rating">
-          <TargetIcon width={18} height={18} /> {data.rating}
+          <TargetIcon width={18} height={18} /> {rating}
         </span>
       </div>
       {modeSwitch}
@@ -159,7 +163,7 @@ export function PuzzlesScreen({ theme }: { theme?: string }) {
         key={selected}
         puzzles={puzzles}
         themes={selected === MIXED ? recommended : [selected]}
-        rating={data.rating}
+        rating={rating ?? data.rating}
         done={new Set(data.attempts.map((a) => a.puzzleId))}
       />
     </div>
