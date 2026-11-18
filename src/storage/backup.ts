@@ -4,6 +4,7 @@ import { getDb } from './db'
 import { listGames, saveGames } from './games'
 import { mistakesChanged } from './mistakeStore'
 import { drillsChanged } from './openingStore'
+import { loadGoalData, restoreGoalData, type GoalData } from '../goal/goalStore'
 import { getPuzzleRating, listAttempts, puzzlesChanged } from './puzzleStore'
 import type { GameRecord, PuzzleAttempt } from './types'
 
@@ -15,27 +16,32 @@ import type { GameRecord, PuzzleAttempt } from './types'
 
 interface BackupFile {
   app: 'chess-guru'
-  /** 1: games only. 2: also puzzle rating, puzzle attempts and mistake puzzles. 3: also opening lines. */
-  version: 1 | 2 | 3
+  /**
+   * 1: games only. 2: also puzzle rating, puzzle attempts and mistake puzzles. 3: also opening
+   * lines. 4: also the daily goal, puzzles done per day and the days the goal was met.
+   */
+  version: 1 | 2 | 3 | 4
   exportedAt: number
   games: GameRecord[]
   puzzleRating?: number
   puzzleAttempts?: PuzzleAttempt[]
   mistakePuzzles?: MistakePuzzle[]
   openingDrills?: OpeningDrill[]
+  goal?: Pick<GoalData, 'goal' | 'puzzleDays' | 'goalDays'>
 }
 
 export async function exportBackup(): Promise<string> {
   const db = await getDb()
   const file: BackupFile = {
     app: 'chess-guru',
-    version: 3,
+    version: 4,
     exportedAt: Date.now(),
     games: await listGames(),
     puzzleRating: await getPuzzleRating(),
     puzzleAttempts: await listAttempts(),
     mistakePuzzles: await db.getAll('mistakePuzzles'),
     openingDrills: await db.getAll('openingDrills'),
+    goal: await loadGoalData().then(({ goal, puzzleDays, goalDays }) => ({ goal, puzzleDays, goalDays })),
   }
   return JSON.stringify(file)
 }
@@ -121,6 +127,17 @@ export async function importBackup(text: string): Promise<RestoreResult> {
     puzzlesChanged.dispatchEvent(new Event('change'))
     mistakesChanged.dispatchEvent(new Event('change'))
     drillsChanged.dispatchEvent(new Event('change'))
+  }
+  const goal = data.goal
+  if (goal && typeof goal === 'object') {
+    const okGoal = goal.goal && typeof goal.goal.games === 'number' && typeof goal.goal.puzzles === 'number'
+    const okDays = Array.isArray(goal.goalDays) && goal.goalDays.every((d) => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d))
+    const okCounts = goal.puzzleDays && typeof goal.puzzleDays === 'object' && Object.values(goal.puzzleDays).every((n) => typeof n === 'number')
+    await restoreGoalData({
+      goal: okGoal ? goal.goal : undefined,
+      goalDays: okDays ? goal.goalDays : undefined,
+      puzzleDays: okCounts ? goal.puzzleDays : undefined,
+    })
   }
   return {
     restored: valid.length,

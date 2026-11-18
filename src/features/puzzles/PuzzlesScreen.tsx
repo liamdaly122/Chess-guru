@@ -17,11 +17,13 @@ import {
 import { recommendedThemes, THEME_LABEL } from '../../puzzles/themes'
 import { puzzleStartRating, ratingSummary } from '../../rating/estimate'
 import { recordAttempt } from '../../storage/puzzleStore'
+import { countPuzzleDone } from '../../goal/goalStore'
 import { usePuzzleData } from '../../storage/usePuzzleData'
 import { useGames } from '../../storage/useGames'
 import { useMistakePuzzles } from '../../storage/useMistakePuzzles'
 import { duePuzzles } from '../../puzzles/mistakes'
 import { MistakeTrainer } from './MistakeTrainer'
+import { GoalLine } from '../goal/GoalCard'
 import { drillStats } from '../../openings/drill'
 import { useOpeningDrills } from '../../storage/openingStore'
 import { OpeningLines } from '../openings/OpeningLines'
@@ -100,6 +102,7 @@ export function PuzzlesScreen({ theme }: { theme?: string }) {
           <h1>Train</h1>
         </div>
         {modeSwitch}
+        <GoalLine />
         {!drills ? (
           <p className="muted">Loading…</p>
         ) : theme === OPENING_LINES || drills.length === 0 ? (
@@ -118,6 +121,7 @@ export function PuzzlesScreen({ theme }: { theme?: string }) {
           <h1>Train</h1>
         </div>
         {modeSwitch}
+        <GoalLine />
         {mistakes ? <MistakeTrainer puzzles={mistakes} /> : <p className="muted">Loading…</p>}
       </div>
     )
@@ -134,6 +138,7 @@ export function PuzzlesScreen({ theme }: { theme?: string }) {
         </span>
       </div>
       {modeSwitch}
+      <GoalLine />
       <div className="theme-chips theme-picker" role="tablist" aria-label="Theme">
         <a className={`chip ${selected === MIXED ? 'active' : ''}`} href={routeHref({ name: 'puzzles' })}>
           Your weak spots
@@ -207,6 +212,7 @@ function Trainer({ puzzles, themes, rating, done }: TrainerProps) {
     const solved = s.wrong === 0 && !helped
     const after = updatePuzzleRating(rating, s.puzzle.rating, solved)
     setResult({ solved, change: after - rating })
+    void countPuzzleDone()
     await recordAttempt({
       id: `${s.puzzle.id}:${Date.now()}`,
       puzzleId: s.puzzle.id,

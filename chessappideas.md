@@ -2,7 +2,7 @@
 
 By Liam Daly. A list of possible improvements, roughly in the order I'd consider them. Effort is a rough guide: small (an afternoon), medium (a day or two), large (several days).
 
-Done so far: human-like Maia-3 bots, installable app, puzzles from your own mistakes (with spaced repetition), backup to Files / iCloud Drive, the opening trainer, automatic Lichess import (with background reviews), the rating estimate and the adaptive bot.
+Done so far: human-like Maia-3 bots, installable app, puzzles from your own mistakes (with spaced repetition), backup to Files / iCloud Drive, the opening trainer, automatic Lichess import (with background reviews), the rating estimate, the adaptive bot, and the daily goal with streaks.
 
 ## Accounts and saving progress
 
@@ -22,9 +22,6 @@ From any position in a saved game, play your own moves and see the engine's verd
 A training toggle in bot games: "what is my opponent threatening?" uses the existing null-move analysis to point at the threat.
 
 ## Progress and motivation
-
-**Daily goal and streaks** (small)
-A small daily target (for example one game and five puzzles) with a streak counter.
 
 **Puzzle modes** (small)
 A timed "puzzle rush" and a "puzzle streak" mode that gets harder after each correct answer.

@@ -22,6 +22,7 @@ import {
 } from '../../openings/drill'
 import { lineText } from '../../openings/lines'
 import { saveDrill } from '../../storage/openingStore'
+import { countPuzzleDone } from '../../goal/goalStore'
 import { whenText, type PuzzleResult } from '../../training/srs'
 import { BulbIcon, CheckIcon } from '../../ui/icons'
 import { GameBoard } from '../play/GameBoard'
@@ -153,6 +154,7 @@ function DrillView({ drill: given, book, onNext }: { drill: OpeningDrill; book: 
     const result = runResult(run)
     const next = scheduleDrill(drill, result, Date.now())
     void saveDrill(next).then(() => setFinished({ result, next }))
+    void countPuzzleDone()
   }, [done, run, drill])
 
   const fen = fenAt(drill, run.ply)

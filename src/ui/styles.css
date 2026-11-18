@@ -3463,3 +3463,146 @@ a.chip.active {
   margin-top: 6px;
   font-weight: 600;
 }
+
+/* ============================================================
+   Daily goal and streaks
+   ============================================================ */
+
+.progress-top {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.progress-top .strength-card {
+  margin-bottom: 0;
+}
+
+@media (min-width: 960px) {
+  .progress-top {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+    align-items: stretch;
+  }
+}
+
+.goal-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.goal-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.goal-head .card-title {
+  margin: 0;
+}
+
+.goal-head .link-button {
+  min-height: 0;
+  padding: 0;
+  color: var(--accent);
+  font-size: 0.9rem;
+}
+
+.goal-bars {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.goal-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.goal-bar-head {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+}
+
+.goal-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+.goal-bar.complete .goal-count {
+  color: var(--accent);
+}
+
+.goal-fill,
+.goal-bar.complete .goal-fill {
+  background: var(--accent);
+}
+
+.goal-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+
+.streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 800;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.streak.on {
+  color: var(--r-mistake);
+}
+
+.goal-edit {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.goal-edit label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.goal-edit select {
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.goal-edit p {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.goal-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -4px 0 10px;
+}
+
+.goal-message span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.goal-message svg {
+  color: var(--r-mistake);
+  flex: none;
+}

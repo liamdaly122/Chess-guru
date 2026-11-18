@@ -7,6 +7,7 @@ import { ReviewScreen } from './features/review/ReviewScreen'
 import { BoardIcon, ChartIcon, ListIcon, TargetIcon } from './ui/icons'
 import { UpdateBanner } from './features/settings/UpdateBanner'
 import { NewGamesBanner } from './features/games/NewGamesBanner'
+import { GoalMessage } from './features/goal/GoalMessage'
 import { BackgroundReviewer } from './features/review/BackgroundReviewer'
 import { useAutoLichessCheck } from './lichess/autoSync'
 
@@ -46,6 +47,7 @@ export default function App() {
       <UpdateBanner />
       <main>
         {route.name !== 'play' && <NewGamesBanner onGamesPage={route.name === 'games'} />}
+        <GoalMessage />
         {/* Paused during a game and on the review screen, which use the engine themselves. */}
         <BackgroundReviewer paused={route.name === 'play' || route.name === 'review'} />
         {/* The play screen stays mounted so a game in progress survives visiting other pages. */}

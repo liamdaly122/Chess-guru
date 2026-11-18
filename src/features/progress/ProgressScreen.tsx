@@ -12,6 +12,7 @@ import { mistakeStats } from '../../puzzles/mistakes'
 import { drillStats } from '../../openings/drill'
 import { useOpeningDrills } from '../../storage/openingStore'
 import { AccuracyChart } from './AccuracyChart'
+import { GoalCard } from '../goal/GoalCard'
 import { queueReviews, useReviewQueue } from '../../review/reviewQueue'
 import { RATING } from '../../config/rating'
 import { lichessRatings, puzzleStartRating, ratingSummary } from '../../rating/estimate'
@@ -74,6 +75,8 @@ export function ProgressScreen() {
         </div>
       </div>
 
+      <div className="progress-top">
+        <GoalCard />
       <section className="card strength-card" data-testid="strength">
         <div className="strength-main">
           <span className="tile-label">Estimated rating</span>
@@ -103,6 +106,7 @@ export function ProgressScreen() {
           )}
         </div>
       </section>
+      </div>
 
       <div className="stat-tiles" data-testid="stat-tiles">
         <div className="card tile">

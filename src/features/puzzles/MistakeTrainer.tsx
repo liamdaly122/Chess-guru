@@ -17,6 +17,7 @@ import {
 } from '../../puzzles/mistakes'
 import { formatDate } from '../../storage/gameInfo'
 import { saveMistakePuzzle } from '../../storage/mistakeStore'
+import { countPuzzleDone } from '../../goal/goalStore'
 import { BulbIcon, CheckIcon } from '../../ui/icons'
 import { GameBoard } from '../play/GameBoard'
 import { RatingBadge } from '../play/RatingBadge'
@@ -122,6 +123,7 @@ function MistakePuzzleView({ puzzle, onNext }: { puzzle: MistakePuzzle; onNext: 
     const result: PuzzleResult = !success ? 'failed' : wrong === 0 && !usedHint ? 'solved' : 'helped'
     const next = schedule(puzzle, result, Date.now())
     await saveMistakePuzzle(next)
+    void countPuzzleDone()
     setPhase({ kind: 'done', result, message, next })
   }
 
