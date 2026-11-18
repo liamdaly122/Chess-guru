@@ -6,6 +6,7 @@ import { PuzzlesScreen } from './features/puzzles/PuzzlesScreen'
 import { ReviewScreen } from './features/review/ReviewScreen'
 import { BoardIcon, ChartIcon, ListIcon, TargetIcon } from './ui/icons'
 import { UpdateBanner } from './features/settings/UpdateBanner'
+import { ErrorBoundary } from './ui/ErrorBoundary'
 import { NewGamesBanner } from './features/games/NewGamesBanner'
 import { GoalMessage } from './features/goal/GoalMessage'
 import { BackgroundReviewer } from './features/review/BackgroundReviewer'
@@ -52,12 +53,18 @@ export default function App() {
         <BackgroundReviewer paused={route.name === 'play' || route.name === 'review'} />
         {/* The play screen stays mounted so a game in progress survives visiting other pages. */}
         <div hidden={route.name !== 'play'}>
-          <PlayScreen />
+          <ErrorBoundary>
+            <PlayScreen />
+          </ErrorBoundary>
         </div>
-        {route.name === 'games' && <GamesScreen />}
-        {route.name === 'review' && <ReviewScreen id={route.id} />}
-        {route.name === 'progress' && <ProgressScreen />}
-        {route.name === 'puzzles' && <PuzzlesScreen theme={route.theme} />}
+        {route.name !== 'play' && (
+          <ErrorBoundary key={route.name === 'review' ? `review:${route.id}` : route.name}>
+            {route.name === 'games' && <GamesScreen />}
+            {route.name === 'review' && <ReviewScreen id={route.id} />}
+            {route.name === 'progress' && <ProgressScreen />}
+            {route.name === 'puzzles' && <PuzzlesScreen theme={route.theme} />}
+          </ErrorBoundary>
+        )}
       </main>
     </div>
   )

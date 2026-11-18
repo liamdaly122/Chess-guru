@@ -3726,3 +3726,8 @@ a.chip.active {
   padding: 4px 0;
   color: var(--accent);
 }
+
+.crash-detail {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  overflow-wrap: anywhere;
+}

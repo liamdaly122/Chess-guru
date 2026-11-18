@@ -1,5 +1,6 @@
 import { groupByPosition, mergePuzzle, mistakePuzzlesFromGame, type MistakePuzzle } from '../puzzles/mistakes'
 import { positionKey } from '../openings/book'
+import { isPattern } from '../puzzles/patterns'
 import { getDb } from './db'
 import type { GameRecord } from './types'
 
@@ -9,8 +10,13 @@ function notify() {
   mistakesChanged.dispatchEvent(new Event('change'))
 }
 
+/**
+ * Puzzles in the current format. Puzzles saved before mistakes were grouped by pattern (or
+ * restored from an older backup) are left out until `syncMistakePuzzles` has moved them over:
+ * the pages can't show them, and once crashed reading their missing fields.
+ */
 export async function listMistakePuzzles(): Promise<MistakePuzzle[]> {
-  return (await getDb()).getAll('mistakePuzzles')
+  return (await (await getDb()).getAll('mistakePuzzles')).filter((p) => !isOldFormat(p) && isPattern(p.pattern))
 }
 
 export async function saveMistakePuzzle(p: MistakePuzzle): Promise<void> {
@@ -20,7 +26,8 @@ export async function saveMistakePuzzle(p: MistakePuzzle): Promise<void> {
 
 /** A puzzle saved before puzzles were grouped by position (one per game and move). */
 function isOldFormat(p: MistakePuzzle): boolean {
-  return !Array.isArray((p as Partial<MistakePuzzle>).occurrences)
+  const occ = (p as Partial<MistakePuzzle>).occurrences
+  return !Array.isArray(occ) || occ.length === 0
 }
 
 /**

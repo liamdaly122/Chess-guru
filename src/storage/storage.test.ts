@@ -208,6 +208,8 @@ describe('mistake puzzles grouped by position', () => {
       })
     // An old-style puzzle (one per game and move) with some progress.
     await saveMistakePuzzle({ id: 'a:0', fen: FEN, solution: 'f1b5', box: 2, dueAt: 5000, attempts: 2, cleanSolves: 2, lastAt: 50 } as never)
+    // Not shown until it has been moved over (the pages crashed reading its missing fields).
+    expect(await listMistakePuzzles()).toEqual([])
 
     expect(await syncMistakePuzzles([reviewed('a', 10)], 100)).toBe(0) // moved, not added
     let [p] = await listMistakePuzzles()
