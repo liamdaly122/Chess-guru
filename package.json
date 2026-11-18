@@ -16,7 +16,8 @@
     "build:openings": "node scripts/build-openings.mjs",
     "build:puzzles": "node scripts/build-puzzles.mjs",
     "maia:strength": "node scripts/maia-strength.mjs",
-    "ui:tour": "node scripts/ui-tour.cjs"
+    "ui:tour": "node scripts/ui-tour.cjs",
+    "build:icons": "node scripts/build-icons.cjs"
   },
   "dependencies": {
     "chess.js": "^1.4.0",

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { BulbIcon } from '../../ui/icons'
 import type { CoachMessage } from './coachMessage'
 import { RatingBadge } from './RatingBadge'
+import { KnightMark } from '../../ui/KnightMark'
 
 /**
  * The coach above the board on phones, styled after Chess.com's coach: an avatar with a speech
@@ -17,7 +18,7 @@ export function CoachBubble({ message }: { message: CoachMessage }) {
   return (
     <div className="coach-row" data-testid="coach-bubble">
       <span className="coach-face" aria-hidden>
-        <span className="coach-face-glyph">♞</span>
+        <KnightMark size={30} withBase={false} />
       </span>
       <div className={`coach-speech tone-edge-${message.tone}`} aria-live="polite" key={key}>
         {(message.title || message.badge || message.evalText) && (

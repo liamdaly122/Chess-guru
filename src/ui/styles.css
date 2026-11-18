@@ -4041,3 +4041,21 @@ a.chip.active {
   padding: 6px 4px;
   white-space: nowrap;
 }
+
+/* The knight from the app icon, in the logo and the coach's avatar. */
+.brand-mark,
+.coach-face {
+  background: linear-gradient(145deg, #2f9a63, #0d3b26);
+}
+
+.knight-mark {
+  display: block;
+  filter: drop-shadow(0 1px 1px rgba(4, 21, 13, 0.35));
+}
+
+@media (max-width: 700px) {
+  .coach-face .knight-mark {
+    width: 25px;
+    height: 25px;
+  }
+}

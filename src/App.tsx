@@ -8,6 +8,7 @@ import { ReviewScreen } from './features/review/ReviewScreen'
 import { BoardIcon, ChartIcon, ListIcon, TargetIcon } from './ui/icons'
 import { UpdateBanner } from './features/settings/UpdateBanner'
 import { ErrorBoundary } from './ui/ErrorBoundary'
+import { KnightMark } from './ui/KnightMark'
 import { NewGamesBanner } from './features/games/NewGamesBanner'
 import { GoalMessage } from './features/goal/GoalMessage'
 import { BackgroundReviewer } from './features/review/BackgroundReviewer'
@@ -34,7 +35,7 @@ export default function App() {
       <header className="app-header">
         <a className="brand" href="#/">
           <span className="brand-mark" aria-hidden>
-            ♞
+            <KnightMark size={24} />
           </span>
           <span className="brand-name">
             Chess <span>Guru</span>
