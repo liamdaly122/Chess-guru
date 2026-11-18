@@ -2454,3 +2454,68 @@ a.chip.active {
 .puzzle-note {
   margin: 10px 4px 0;
 }
+
+/* ============================================================
+   Phase 6: Maia note, about section
+   ============================================================ */
+
+.maia-note {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.maia-note.loading {
+  border-color: var(--r-great);
+}
+
+.maia-note.failed {
+  border-color: var(--r-mistake);
+}
+
+.about {
+  margin-top: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.about h3 {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+}
+
+.about p {
+  margin: 0 0 6px;
+}
+
+.licences {
+  margin: 0;
+  padding-left: 18px;
+}
+
+/* ---------- Installable app ---------- */
+
+.update-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  box-shadow: var(--shadow);
+  font-weight: 600;
+  animation: rise 0.3s ease both;
+}
+
+.install button {
+  margin: 4px 0 8px;
+}
+
+/* Installed on a phone: no browser bar, so leave room for the status bar. */
+@media (display-mode: standalone) {
+  .app-header {
+    margin-top: 4px;
+  }
+}

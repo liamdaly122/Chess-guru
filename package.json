@@ -14,11 +14,14 @@
     "lint": "oxlint",
     "postinstall": "node scripts/copy-engine.mjs",
     "build:openings": "node scripts/build-openings.mjs",
-    "build:puzzles": "node scripts/build-puzzles.mjs"
+    "build:puzzles": "node scripts/build-puzzles.mjs",
+    "maia:strength": "node scripts/maia-strength.mjs"
   },
   "dependencies": {
     "chess.js": "^1.4.0",
     "idb": "^8.0.4",
+    "maia3-js": "^0.2.0",
+    "onnxruntime-web": "^1.31.1",
     "react": "^19.3.1",
     "react-chessboard": "^5.12.1",
     "react-dom": "^19.3.1",

@@ -1,11 +1,13 @@
 import { Chess } from 'chess.js'
-import type { EngineSettings, Level } from '../config/levels'
+import { stockfishSettings, type Level, type StockfishSettings } from '../config/levels'
 import type { OpponentEngine } from './OpponentEngine'
 import { UciEngine } from './uciEngine'
 
-/** Plays against the user using Stockfish with limited strength. */
+/**
+ * Plays against the user using Stockfish with limited strength.
+ * For Maia levels it uses the level's Stockfish fallback settings.
+ */
 export class StockfishOpponent implements OpponentEngine {
-  readonly name = 'Stockfish'
   private engine: UciEngine
   /** Settings last sent to the engine, so we only send setoption when they change. */
   private appliedKey = ''
@@ -22,12 +24,12 @@ export class StockfishOpponent implements OpponentEngine {
 
   async newGame(level: Level): Promise<void> {
     await this.engine.newGame()
-    await this.apply(level.engine)
+    await this.apply(stockfishSettings(level))
   }
 
   async chooseMove(fen: string, level: Level, signal?: AbortSignal): Promise<string | null> {
     if (signal?.aborted) return null
-    const settings = level.engine
+    const settings = stockfishSettings(level)
 
     if (settings.kind === 'skill' && this.random() < settings.randomMoveChance) {
       const move = randomLegalMove(fen, this.random)
@@ -53,7 +55,7 @@ export class StockfishOpponent implements OpponentEngine {
     this.engine.dispose()
   }
 
-  private async apply(settings: EngineSettings): Promise<void> {
+  private async apply(settings: StockfishSettings): Promise<void> {
     const key = JSON.stringify(settings)
     if (key === this.appliedKey) return
     if (settings.kind === 'elo') {

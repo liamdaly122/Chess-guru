@@ -17,11 +17,12 @@ const COLOURS: { value: ColourChoice; label: string; glyph: React.ReactNode }[] 
   { value: 'b', label: 'Black', glyph: <span className="king-glyph black">♚</span> },
 ]
 
-function bandText(rating: number): string {
-  if (rating < 1320) return 'Plays some random moves. Good for learning the basics.'
-  if (rating < 1800) return 'Club strength. Punishes loose pieces.'
-  if (rating < 2300) return 'Strong. Few free gifts.'
-  return 'Very strong. Expect to lose most games.'
+function bandText(level: (typeof LEVELS)[number]): string {
+  if (level.engine.kind === 'maia') {
+    return `Maia, a neural network trained on real games, plays like a human rated about ${level.rating}, mistakes included.`
+  }
+  if (level.rating < 2300) return 'Stockfish at limited strength. Strong, few free gifts.'
+  return 'Stockfish at limited strength. Very strong: expect to lose most games.'
 }
 
 /** Pick a colour and a bot level, then start. */
@@ -74,7 +75,7 @@ export function NewGameForm({ initial, onStart, inProgress, onResign }: Props) {
         <span>{LEVELS[0].rating}</span>
         <span>{LEVELS[LEVELS.length - 1].rating}</span>
       </div>
-      <p className="muted level-band">{bandText(level.rating)} Ratings are approximate.</p>
+      <p className="muted level-band">{bandText(level)} Ratings are approximate.</p>
 
       {inProgress && (
         <p className="resign-note">Starting a new game counts the current one as a loss (resigned). It is saved to your games.</p>

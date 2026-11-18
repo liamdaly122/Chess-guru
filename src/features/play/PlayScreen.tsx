@@ -16,6 +16,8 @@ import { NewGameForm } from './NewGameForm'
 import { PlayerStrip } from './PlayerStrip'
 import { loadSettings, usePlayGame } from './usePlayGame'
 import { usePreferences } from './usePreferences'
+import { AboutSection } from '../settings/AboutSection'
+import { InstallSection } from '../settings/InstallSection'
 import { useSaveBotGame } from './useSaveBotGame'
 import { useOpeningBook } from '../../openings/useOpeningBook'
 import { OpeningPanel } from '../openings/OpeningPanel'
@@ -75,9 +77,19 @@ export function PlayScreen() {
     setHintState({ fen: play.fen, step: Math.min(3, hintStep + 1) })
   }
 
+  const isMaia = play.level.engine.kind === 'maia'
   let statusText = describeStatus(play.status, play.userColor)
   if (play.engineError) statusText = play.engineError
   else if (!play.engineReady) statusText = 'Loading engine…'
+  else if (isMaia && play.maiaStatus.state === 'loading' && !play.isUserTurn && !play.status.over) {
+    statusText = `Downloading the human-like bot… ${Math.round(play.maiaStatus.progress * 100)}%`
+  }
+  const maiaNote =
+    isMaia && play.maiaStatus.state === 'loading'
+      ? `Getting Maia ready: a one-off download of about 25 MB (${Math.round(play.maiaStatus.progress * 100)}%).`
+      : isMaia && play.maiaStatus.state === 'failed'
+        ? "Couldn't load the human-like bot on this device, so Stockfish is playing this level instead."
+        : null
 
   const showGameOver = play.status.over && dismissedGameOver !== play.history.length
   const evalScore = latestEval(analysis.snapshot, play.positions)
@@ -88,7 +100,7 @@ export function PlayScreen() {
         <PlayerStrip
           kind="bot"
           name={play.engineName}
-          detail={`${play.level.rating} · ${play.level.label}`}
+          detail={`${play.level.rating} · ${play.level.label}${isMaia ? ' · human-like' : ''}`}
           color={botColor}
           material={material[botColor]}
           thinking={play.botThinking}
@@ -136,6 +148,11 @@ export function PlayScreen() {
       </section>
 
       <aside className="side-area">
+        {maiaNote && (
+          <p className={`card maia-note ${play.maiaStatus.state}`} role="status" data-testid="maia-note">
+            {maiaNote}
+          </p>
+        )}
         <nav className="action-bar" aria-label="Game controls">
           <button type="button" className="action" onClick={() => setModal('new')}>
             <PlusIcon />
@@ -236,6 +253,8 @@ export function PlayScreen() {
             onChange={(v) => setPrefs({ showEval: v })}
           />
         </div>
+        <InstallSection />
+        <AboutSection />
       </Modal>
     </div>
   )

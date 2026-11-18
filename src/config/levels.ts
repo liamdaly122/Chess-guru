@@ -1,20 +1,19 @@
 // Bot levels. Edit this table to tune how the bot plays.
 //
-// How Stockfish weakens itself:
-// - UCI_LimitStrength + UCI_Elo: supported from 1320 to 3190 in Stockfish 19
-//   (checked by asking the engine for its options).
-// - Internally, UCI_Elo is converted to Skill Level, and UCI_Elo 1320 equals
-//   Skill Level 0 (see Skill in Stockfish's search.h). So Skill Level alone
-//   cannot play much below about 1320.
-// - For the levels below 1320 we use Skill Level 0, a shallow search depth and a
-//   chance of playing a random legal move instead of the engine's choice.
-//   These mistakes are random rather than human-like. Phase 6 replaces the low
-//   levels with Maia, which is trained to make human mistakes.
+// 400 to 1800: Maia-3, a neural network trained on millions of Lichess games to play like a
+// human of a given rating. It makes the kind of mistakes real players at that level make.
+// 2000 and up: Stockfish with UCI_LimitStrength, which is reliable at strong levels.
 //
-// The ratings are approximate. Stockfish's Elo scale was calibrated against
-// other engines, not against Lichess or Chess.com players.
+// Each Maia level has a Stockfish fallback, used only if the Maia model can't load
+// (for example an old browser). Stockfish notes:
+// - UCI_Elo is supported from 1320 to 3190 in Stockfish 19 (checked by asking the engine).
+// - UCI_Elo 1320 equals Skill Level 0 (see Skill in Stockfish's search.h), so below that the
+//   fallback adds random moves (`randomMoveChance`).
+//
+// Ratings are approximate. Maia's ratings are Lichess ratings; Stockfish's Elo scale was
+// calibrated against engines.
 
-export type EngineSettings =
+export type StockfishSettings =
   | {
       kind: 'elo'
       /** Passed to UCI_Elo. Must be between ENGINE_ELO_MIN and ENGINE_ELO_MAX. */
@@ -32,6 +31,16 @@ export type EngineSettings =
       randomMoveChance: number
     }
 
+export interface MaiaSettings {
+  kind: 'maia'
+  /** The rating Maia plays as. */
+  elo: number
+  /** Used if Maia can't load. */
+  fallback: StockfishSettings
+}
+
+export type EngineSettings = StockfishSettings | MaiaSettings
+
 export interface Level {
   /** Approximate rating shown in the level picker. */
   rating: number
@@ -42,26 +51,45 @@ export interface Level {
 export const ENGINE_ELO_MIN = 1320
 export const ENGINE_ELO_MAX = 3190
 
-/** Minimum time the bot waits before moving, so instant replies don't feel jarring. */
+/** Minimum time Stockfish waits before moving, so instant replies don't feel jarring. */
 export const MIN_BOT_DELAY_MS = 400
 
+const maia = (elo: number, fallback: StockfishSettings): MaiaSettings => ({ kind: 'maia', elo, fallback })
+const sfElo = (elo: number, moveTimeMs = 600): StockfishSettings => ({ kind: 'elo', elo, moveTimeMs })
+const sfSkill = (depth: number, randomMoveChance: number): StockfishSettings => ({
+  kind: 'skill',
+  skill: 0,
+  depth,
+  randomMoveChance,
+})
+
 export const LEVELS: Level[] = [
-  { rating: 400, label: 'Beginner', engine: { kind: 'skill', skill: 0, depth: 1, randomMoveChance: 0.5 } },
-  { rating: 600, label: 'Novice', engine: { kind: 'skill', skill: 0, depth: 1, randomMoveChance: 0.35 } },
-  { rating: 800, label: 'Casual', engine: { kind: 'skill', skill: 0, depth: 2, randomMoveChance: 0.22 } },
-  { rating: 1000, label: 'Club beginner', engine: { kind: 'skill', skill: 0, depth: 3, randomMoveChance: 0.12 } },
-  { rating: 1200, label: 'Improver', engine: { kind: 'skill', skill: 0, depth: 4, randomMoveChance: 0.05 } },
-  { rating: 1400, label: 'Club player', engine: { kind: 'elo', elo: 1400, moveTimeMs: 600 } },
-  { rating: 1600, label: 'Strong club', engine: { kind: 'elo', elo: 1600, moveTimeMs: 600 } },
-  { rating: 1800, label: 'Advanced', engine: { kind: 'elo', elo: 1800, moveTimeMs: 700 } },
-  { rating: 2000, label: 'Expert', engine: { kind: 'elo', elo: 2000, moveTimeMs: 800 } },
-  { rating: 2200, label: 'Master', engine: { kind: 'elo', elo: 2200, moveTimeMs: 900 } },
-  { rating: 2500, label: 'Grandmaster', engine: { kind: 'elo', elo: 2500, moveTimeMs: 1000 } },
-  { rating: 3190, label: 'Full limited strength', engine: { kind: 'elo', elo: 3190, moveTimeMs: 1000 } },
+  { rating: 400, label: 'Beginner', engine: maia(400, sfSkill(1, 0.5)) },
+  { rating: 600, label: 'Novice', engine: maia(600, sfSkill(1, 0.35)) },
+  { rating: 800, label: 'Casual', engine: maia(800, sfSkill(2, 0.22)) },
+  { rating: 1000, label: 'Club beginner', engine: maia(1000, sfSkill(3, 0.12)) },
+  { rating: 1200, label: 'Improver', engine: maia(1200, sfSkill(4, 0.05)) },
+  { rating: 1400, label: 'Club player', engine: maia(1400, sfElo(1400)) },
+  { rating: 1600, label: 'Strong club', engine: maia(1600, sfElo(1600)) },
+  { rating: 1800, label: 'Advanced', engine: maia(1800, sfElo(1800, 700)) },
+  { rating: 2000, label: 'Expert', engine: sfElo(2000, 800) },
+  { rating: 2200, label: 'Master', engine: sfElo(2200, 900) },
+  { rating: 2500, label: 'Grandmaster', engine: sfElo(2500, 1000) },
+  { rating: 3190, label: 'Full limited strength', engine: sfElo(3190, 1000) },
 ]
 
 export const DEFAULT_LEVEL_RATING = 1200
 
 export function findLevel(rating: number): Level {
   return LEVELS.find((l) => l.rating === rating) ?? LEVELS.find((l) => l.rating === DEFAULT_LEVEL_RATING)!
+}
+
+/** Name shown for the bot at this level. */
+export function botName(level: Level): string {
+  return level.engine.kind === 'maia' ? 'Maia' : 'Stockfish'
+}
+
+/** The Stockfish settings for a level: its own, or the fallback for a Maia level. */
+export function stockfishSettings(level: Level): StockfishSettings {
+  return level.engine.kind === 'maia' ? level.engine.fallback : level.engine
 }

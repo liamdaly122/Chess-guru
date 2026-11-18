@@ -33,9 +33,9 @@ Testing tip: open `http://localhost:5173/?fen=<FEN>` to start a game from any po
 - **No Claude API, no server.** The user decided not to pay for API credits. Coaching notes will be generated in code from structured engine facts (templates). Keep coaching text generation in one module (`src/coach/`, from Phase 3) so an AI layer could be added later if wanted. With no server, there is no `.env`; `.env` is still gitignored in case one is added.
 - **Stockfish 19, lite single-threaded WASM build** (npm `stockfish@19.0.1`, pinned). No cross-origin isolation headers needed, about 1.8 MB, works in iOS web views. Trade-off: a little weaker and slower per move than the full multi-threaded build, but far stronger than any human. Each engine instance runs in its own Web Worker, so the bot and the analyser (Phase 2) still use separate CPU cores.
 - `scripts/copy-engine.mjs` copies the engine into `public/engine/stockfish.js` and `.wasm` (version-free names; the engine finds its `.wasm` by swapping the extension). Runs on `postinstall`, `predev` and `prebuild`. `public/engine/` is gitignored.
-- **UCI_Elo range is 1320 to 3190** (checked by asking the engine). In Stockfish's source, UCI_Elo is converted to Skill Level and 1320 equals Skill Level 0, so Skill Level alone cannot play below about 1320. Levels below 1320 use Skill Level 0, a shallow depth and a chance of a random legal move (`randomMoveChance`). Those mistakes are random, not human. Phase 6 (Maia) should replace them.
+- **UCI_Elo range is 1320 to 3190** (checked by asking the engine). In Stockfish's source, UCI_Elo is converted to Skill Level and 1320 equals Skill Level 0, so Skill Level alone cannot play below about 1320. Since Phase 6 the levels below 2000 are played by Maia; the old Skill Level + random-move settings remain only as Maia's fallback.
 - Levels are approximate. Stockfish's Elo is calibrated against engines, not Lichess or Chess.com players. Elo levels use a fixed `movetime` per move so they stay consistent.
-- The opponent sits behind `OpponentEngine` (`src/engine/OpponentEngine.ts`). Maia will implement the same interface.
+- The opponent sits behind `OpponentEngine` (`src/engine/OpponentEngine.ts`). `BotOpponent` routes each level to Maia or Stockfish.
 - Game state is a list of UCI moves (plus an optional start FEN). The chess.js game is rebuilt from it with `useMemo`, so undo, threefold repetition and the move list all come from one source.
 - Undo takes back your move and the bot's reply (or just your move if the bot hasn't replied). Each undo increments a `takebacks` counter, kept for later phases (games with takebacks should be marked, and undone moves should not count in stats).
 - **Analysis (Phase 2):** a second Stockfish worker at full strength (`src/engine/Analyser.ts`) analyses every position of the game in order, through `src/analysis/AnalysisQueue.ts`. Results are cached by FEN, so undo and replay don't redo work. Positions that drop out of the game are skipped and their search stopped. Settings (depth 16, 4 s cap, MultiPV 2) live in `src/config/analysis.ts`. Depth 16 measured at 0.4 to 0.8 s per position on a laptop; phones are slower, hence the time cap.
@@ -68,6 +68,13 @@ Testing tip: open `http://localhost:5173/?fen=<FEN>` to start a game from any po
 - **Puzzle trainer** (`puzzles/puzzle.ts`, `features/puzzles/`): the solution move or any mating move is accepted (like Lichess); wrong tries leave the board unchanged. Hint (glows the piece) and "show solution" count as not solved. Rating is Elo-style (K=32, starts at 1200), stored in the IndexedDB `meta` store; every attempt goes in `puzzleAttempts` (DB version 2). Themes: "your weak spots" mixes `recommendedThemes()` (themes mapped from your costliest mistake categories, then your weakest phase, then common tactics); each theme can be picked directly. Puzzles already tried are skipped.
 - **Navigation**: four sections (Play, Games, Progress, Puzzles). On screens up to 700px wide the tabs become a fixed bottom tab bar.
 - Board square styles use `backgroundImage` for dots/check gradients and `backgroundColor` for highlights; mixing the `background` shorthand with `backgroundColor` makes React warn.
+- **Maia (Phase 6)**: Maia-3 (CSSLab, University of Toronto, 2026; code and weights AGPL-3.0), 5M model, run in the browser with `maia3-js` (MIT, third-party, by Cem Unuvar) and `onnxruntime-web` (CPU/WebAssembly build only, single-threaded, so no COOP/COEP). Chosen over Maia-2 (MIT, older) by the user, accepting the AGPL condition: the app links to its source code (Settings > About). Levels 400 to 1800 are Maia at that rating; 2000+ are limited Stockfish (`config/levels.ts`). Each Maia level keeps a Stockfish fallback, used if the model can't load or returns an illegal move (`engine/BotOpponent.ts`).
+  - Research results (80 puzzle positions, Stockfish depth 12, `scripts/maia-strength.mjs`): loss per move falls with rating (400: 33 Win% avg, 60% blunders; 800: 26/49%; 1200: 25/49%; 1800: 19/38%; 2100: 18/35%). Ratings 1000 to 1500 look similar on tactical positions. Maia's rating input is continuous (clamped 0 to 5000), not buckets.
+  - Sampling: temperature 0 plays the same game every time; `MAIA.temperature` 0.6 with `topP` 0.95 gives variety (several replies to 1.e4) for a small strength cost. Human-like think time 0.6 to 1.6 s (`config/maia.ts`).
+  - Maia gets the game's previous positions (`priorFens`, up to 8) for better predictions.
+  - Runs in a module Web Worker (`engine/maia.worker.ts`, `worker.format: 'es'` in Vite). The model (22.5 MB) is self-hosted at `/maia/maia3-5m.onnx`; ONNX Runtime's wasm (14.8 MB) at `/ort/`. Both are copied by `scripts/copy-engine.mjs` (gitignored). `onnxruntime-web` is aliased to `onnxruntime-web/wasm` (avoids the 24 MB WebGPU build). Only `{ wasm: url }` is passed as `wasmPaths`: pointing at the `.mjs` loader in public/ breaks the Vite dev server, and the bundled build already contains the loader. Vite also emits an unused copy of the wasm into `dist/assets/`; the service worker never downloads it.
+  - Loaded lazily when a Maia level starts; maia3-js keeps the model in Cache Storage. The play screen shows download progress, or a note if it fell back to Stockfish.
+- **Installable app (PWA)**: `public/manifest.webmanifest`, icons in `public/icons/` (rendered from the brand mark), Apple meta tags in `index.html`. Service worker template `src/sw/sw-template.js`, turned into `dist/sw.js` at build time by the `serviceWorker()` plugin in `vite.config.ts` with the list of files to cache up front (everything except Maia, ONNX Runtime and the unused wasm copy) and a version hash. Page loads are network-first with the cached app as offline fallback; other files cache-first. Cache lookups use `ignoreVary` (the server sends `Vary: Origin`, which made module requests miss). A new version waits and shows the "new version ready" banner; the page reloads only when the user taps Reload (never on first install, which would lose a game). Registered in production builds only. `navigator.storage.persist()` is requested at start-up; Settings shows the storage status and install instructions (Install button on Chrome/Android, Share > Add to Home Screen on iOS). `vercel.json` sends `no-cache` for `/sw.js` and long caching for hashed `/assets/`.
 - Board: react-chessboard v5 (`options` prop). It has no built-in promotion dialog, so `PromotionPicker` is ours. Tap-to-move is supported for phones.
 
 ## Defaults chosen (user didn't answer these, change if wanted)
@@ -116,6 +123,14 @@ scripts/build-puzzles.mjs      builds the puzzle subset
 src/storage/puzzleStore.ts     puzzle attempts and rating
 src/features/progress/         progress page, accuracy chart, background reviewer
 src/features/puzzles/          puzzle trainer
+src/config/maia.ts             Maia model location, randomness, think time (edit to tune)
+src/engine/MaiaEngine.ts       Maia worker client; maia.worker.ts runs the model
+src/engine/BotOpponent.ts      routes levels to Maia or Stockfish, with fallback
+scripts/maia-strength.mjs      measures Maia's strength per rating (npm run maia:strength)
+src/sw/sw-template.js          service worker template (built into dist/sw.js)
+src/app/pwa.ts                 service worker registration, update banner, install prompt, persistent storage
+src/features/settings/         About (source and licences), install and storage sections, update banner
+chessappideas.md               ideas for later
 src/features/play/             play screen, board + badge overlay, eval bar, coach card, player strips, game-over card, new game form, move list
 src/ui/styles.css              all styles, mobile-first, dark mode
 ```
@@ -127,7 +142,7 @@ src/ui/styles.css              all styles, mobile-first, dark mode
 - [x] Phase 3: coaching (pattern detectors, template notes, hints) and UI redesign
 - [x] Phase 4: game review, history, Lichess import, opening book
 - [x] Phase 5: weaknesses, progress page, puzzles
-- [ ] Phase 6: Maia for human-like low levels
+- [x] Phase 6: Maia for human-like levels (400 to 1800), plus installable app
 
 ## Working agreement
 

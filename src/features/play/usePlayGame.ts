@@ -1,10 +1,12 @@
 import { Chess, type Color, type Move } from 'chess.js'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { findLevel, MIN_BOT_DELAY_MS, type Level } from '../../config/levels'
+import { botName, findLevel, MIN_BOT_DELAY_MS, type Level } from '../../config/levels'
+import { MAIA } from '../../config/maia'
+import type { MaiaStatus } from '../../engine/MaiaEngine'
 import { getGameStatus, type GameStatus } from '../../chess/gameStatus'
 import { parseUci, plyToUndo, type MoveInput } from '../../chess/moves'
 import type { OpponentEngine } from '../../engine/OpponentEngine'
-import { StockfishOpponent } from '../../engine/StockfishOpponent'
+import { BotOpponent } from '../../engine/BotOpponent'
 
 export type ColourChoice = 'w' | 'b' | 'random'
 
@@ -100,16 +102,22 @@ function freshGame(id: number, userColor: Color, level: Level, startFen?: string
   }
 }
 
-function useOpponent(): { opponent: OpponentEngine | null; ready: boolean; error: string | null } {
-  const [opponent, setOpponent] = useState<OpponentEngine | null>(null)
+function useOpponent(): {
+  opponent: BotOpponent | null
+  ready: boolean
+  error: string | null
+  maiaStatus: MaiaStatus
+} {
+  const [opponent, setOpponent] = useState<BotOpponent | null>(null)
   const [ready, setReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [maiaStatus, setMaiaStatus] = useState<MaiaStatus>({ state: 'idle' })
 
   useEffect(() => {
     let live = true
-    let engine: OpponentEngine
+    let engine: BotOpponent
     try {
-      engine = new StockfishOpponent()
+      engine = new BotOpponent()
     } catch (e) {
       // oxlint-disable-next-line react/set-state-in-effect
       setError(`Could not start the engine: ${String(e)}`)
@@ -118,18 +126,27 @@ function useOpponent(): { opponent: OpponentEngine | null; ready: boolean; error
     // The engine is an external system (a Web Worker), so creating it here is intended.
     // oxlint-disable-next-line react/set-state-in-effect
     setOpponent(engine)
+    const offStatus = engine.onMaiaStatus((s) => live && setMaiaStatus(s))
     engine.whenReady().then(
       () => live && setReady(true),
       (e) => live && setError(`Engine failed to load: ${String(e)}`),
     )
     return () => {
       live = false
+      offStatus()
       setReady(false)
       engine.dispose()
     }
   }, [])
 
-  return { opponent, ready, error }
+  return { opponent, ready, error, maiaStatus }
+}
+
+/** How long the bot waits before showing its move: human-like for Maia, short for Stockfish. */
+function botDelayMs(level: Level): number {
+  if (level.engine.kind !== 'maia') return MIN_BOT_DELAY_MS
+  const { min, max } = MAIA.thinkTimeMs
+  return min + Math.random() * (max - min)
 }
 
 export interface PlayOptions {
@@ -138,7 +155,7 @@ export interface PlayOptions {
 }
 
 export function usePlayGame({ holdBot = false }: PlayOptions = {}) {
-  const { opponent, ready, error } = useOpponent()
+  const { opponent, ready, error, maiaStatus } = useOpponent()
   const [state, setState] = useState<GameState>(() => {
     const s = loadSettings()
     const startFen = fenFromUrl()
@@ -182,10 +199,10 @@ export function usePlayGame({ holdBot = false }: PlayOptions = {}) {
     const startedAt = Date.now()
 
     opponent
-      .chooseMove(fen, state.level, controller.signal)
+      .chooseMove(fen, state.level, controller.signal, positions.slice(0, -1))
       .then(async (uci) => {
         if (!uci || controller.signal.aborted) return
-        const wait = MIN_BOT_DELAY_MS - (Date.now() - startedAt)
+        const wait = botDelayMs(state.level) - (Date.now() - startedAt)
         if (wait > 0) await new Promise((r) => setTimeout(r, wait))
         if (controller.signal.aborted) return
         setState((prev) => {
@@ -197,7 +214,7 @@ export function usePlayGame({ holdBot = false }: PlayOptions = {}) {
       .catch((e) => console.error('Bot move failed', e))
 
     return () => controller.abort()
-  }, [opponent, ready, holdBot, game, status.over, state.userColor, state.level, state.id, state.moves.length])
+  }, [opponent, ready, holdBot, game, positions, status.over, state.userColor, state.level, state.id, state.moves.length])
 
   /** Try to play a move for the user. Returns true if it was legal. */
   const playUserMove = useCallback(
@@ -272,7 +289,8 @@ export function usePlayGame({ holdBot = false }: PlayOptions = {}) {
     level: state.level,
     takebacks: state.takebacks,
     hintedPlies: state.hintedPlies,
-    engineName: opponent?.name ?? 'Engine',
+    engineName: botName(state.level),
+    maiaStatus,
     engineReady: ready,
     engineError: error,
     botThinking,

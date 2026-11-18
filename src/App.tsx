@@ -5,6 +5,7 @@ import { ProgressScreen } from './features/progress/ProgressScreen'
 import { PuzzlesScreen } from './features/puzzles/PuzzlesScreen'
 import { ReviewScreen } from './features/review/ReviewScreen'
 import { BoardIcon, ChartIcon, ListIcon, TargetIcon } from './ui/icons'
+import { UpdateBanner } from './features/settings/UpdateBanner'
 
 const TABS: { route: Route; label: string; icon: typeof BoardIcon }[] = [
   { route: { name: 'play' }, label: 'Play', icon: BoardIcon },
@@ -38,6 +39,7 @@ export default function App() {
           ))}
         </nav>
       </header>
+      <UpdateBanner />
       <main>
         {/* The play screen stays mounted so a game in progress survives visiting other pages. */}
         <div hidden={route.name !== 'play'}>
