@@ -1,8 +1,15 @@
 import type { Chess, Color, Move, Square } from 'chess.js'
-import { useMemo, useState, type CSSProperties } from 'react'
+import { useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 import { Chessboard, type PieceDropHandlerArgs, type SquareHandlerArgs } from 'react-chessboard'
+import type { MoveRating } from '../../chess/classify'
 import type { MoveInput } from '../../chess/moves'
 import { PromotionPicker } from './PromotionPicker'
+import { RatingBadge } from './RatingBadge'
+
+export interface BoardBadge {
+  square: Square
+  rating: MoveRating | 'pending'
+}
 
 interface Props {
   game: Chess
@@ -11,19 +18,39 @@ interface Props {
   canMove: boolean
   lastMove?: Move
   onMove: (move: MoveInput) => boolean
+  /** Rating badge to show on a square (the user's last move). */
+  badge?: BoardBadge | null
+  /** Square to draw attention to (hint step 2). */
+  glowSquare?: Square | null
+  /** Arrow to draw (hint step 3). */
+  arrow?: { from: Square; to: Square } | null
+  /** Anything to lay over the board, e.g. the game-over card. */
+  children?: ReactNode
 }
 
-const LAST_MOVE: CSSProperties = { backgroundColor: 'rgba(255, 213, 79, 0.45)' }
-const SELECTED: CSSProperties = { backgroundColor: 'rgba(100, 181, 246, 0.55)' }
-const CHECK: CSSProperties = { background: 'radial-gradient(circle, rgba(229,57,53,0.9) 0%, rgba(229,57,53,0.4) 45%, transparent 75%)' }
-const DOT: CSSProperties = { background: 'radial-gradient(circle, rgba(0,0,0,0.28) 22%, transparent 24%)' }
-const RING: CSSProperties = { background: 'radial-gradient(circle, transparent 58%, rgba(0,0,0,0.28) 60%)' }
+const LAST_MOVE: CSSProperties = { backgroundColor: 'var(--last-move)' }
+const SELECTED: CSSProperties = { backgroundColor: 'var(--selected)' }
+const CHECK: CSSProperties = {
+  background: 'radial-gradient(circle, rgba(239,68,68,0.95) 0%, rgba(239,68,68,0.45) 40%, transparent 72%)',
+}
+const DOT: CSSProperties = { background: 'radial-gradient(circle, var(--move-dot) 19%, transparent 21%)' }
+const RING: CSSProperties = { background: 'radial-gradient(circle, transparent 60%, var(--move-dot) 62%, var(--move-dot) 74%, transparent 76%)' }
+
+/** Position of a square on the board as percentages, for the overlay layer. */
+function squarePosition(square: Square, orientation: 'white' | 'black') {
+  const file = square.charCodeAt(0) - 97
+  const rank = Number(square[1]) - 1
+  const col = orientation === 'white' ? file : 7 - file
+  const row = orientation === 'white' ? 7 - rank : rank
+  return { left: col * 12.5, top: row * 12.5 }
+}
 
 /**
  * The chessboard. Supports dragging and tap-to-move (tap a piece, then a square),
- * which matters on phones. Shows legal destinations, the last move and check.
+ * shows legal destinations, the last move and check, and draws the rating badge,
+ * hint highlights and arrows on a layer above the pieces.
  */
-export function GameBoard({ game, orientation, userColor, canMove, lastMove, onMove }: Props) {
+export function GameBoard({ game, orientation, userColor, canMove, lastMove, onMove, badge, glowSquare, arrow, children }: Props) {
   const [selected, setSelected] = useState<Square | null>(null)
   const [pendingPromotion, setPendingPromotion] = useState<{ from: Square; to: Square } | null>(null)
   const fen = game.fen()
@@ -56,11 +83,6 @@ export function GameBoard({ game, orientation, userColor, canMove, lastMove, onM
     return ok
   }
 
-  function ownPieceOn(square: Square): boolean {
-    const p = game.get(square)
-    return !!p && p.color === userColor
-  }
-
   function handleSquareClick({ square }: SquareHandlerArgs) {
     if (!canMove) return
     const sq = square as Square
@@ -68,7 +90,8 @@ export function GameBoard({ game, orientation, userColor, canMove, lastMove, onM
       tryMove(selected, sq)
       return
     }
-    if (ownPieceOn(sq)) setSelected(sq === selected ? null : sq)
+    const p = game.get(sq)
+    if (p && p.color === userColor) setSelected(sq === selected ? null : sq)
     else setSelected(null)
   }
 
@@ -96,6 +119,11 @@ export function GameBoard({ game, orientation, userColor, canMove, lastMove, onM
     return styles
   }, [game, lastMove, selected, legalFromSelected])
 
+  const arrows = useMemo(
+    () => (arrow ? [{ startSquare: arrow.from, endSquare: arrow.to, color: 'rgba(59, 130, 246, 0.85)' }] : []),
+    [arrow],
+  )
+
   return (
     <div className="board-wrap">
       <Chessboard
@@ -104,16 +132,41 @@ export function GameBoard({ game, orientation, userColor, canMove, lastMove, onM
           position: fen,
           boardOrientation: orientation,
           squareStyles,
+          arrows,
+          allowDrawingArrows: false,
           allowDragging: canMove,
           canDragPiece: ({ piece }) => canMove && piece.pieceType[0] === userColor,
           onPieceDrop: handleDrop,
           onSquareClick: handleSquareClick,
           onPieceDrag: ({ square }) => square && canMove && setSelected(square as Square),
-          animationDurationInMs: 200,
+          animationDurationInMs: 180,
+          boardStyle: { borderRadius: 'var(--board-radius)', overflow: 'hidden' },
           darkSquareStyle: { backgroundColor: 'var(--board-dark)' },
           lightSquareStyle: { backgroundColor: 'var(--board-light)' },
+          darkSquareNotationStyle: { color: 'var(--board-light)', fontWeight: 600 },
+          lightSquareNotationStyle: { color: 'var(--board-dark)', fontWeight: 600 },
         }}
       />
+
+      <div className="board-overlay" aria-hidden={!badge}>
+        {glowSquare && (
+          <span className="hint-glow" style={pct(squarePosition(glowSquare, orientation))} data-testid="hint-glow" />
+        )}
+        {badge && (
+          <span
+            key={`${badge.square}-${badge.rating}`}
+            className="board-badge"
+            style={pct(squarePosition(badge.square, orientation))}
+            data-testid="board-badge"
+            data-rating={badge.rating}
+          >
+            <RatingBadge rating={badge.rating} size="lg" />
+          </span>
+        )}
+      </div>
+
+      {children}
+
       {pendingPromotion && (
         <PromotionPicker
           color={userColor}
@@ -127,4 +180,8 @@ export function GameBoard({ game, orientation, userColor, canMove, lastMove, onM
       )}
     </div>
   )
+}
+
+function pct({ left, top }: { left: number; top: number }): CSSProperties {
+  return { left: `${left}%`, top: `${top}%` }
 }

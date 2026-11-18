@@ -18,6 +18,8 @@ export interface AnalysisSnapshot {
 export class AnalysisQueue {
   private analyser: Analyser
   private wanted: string[] = []
+  /** Extra positions (e.g. null-move positions for threat detection), done after the game positions. */
+  private extras: string[] = []
   private running = false
   private current: string | null = null
   private disposed = false
@@ -35,7 +37,14 @@ export class AnalysisQueue {
   /** Set the positions that need analysing, in the order they should be done. */
   setPositions(fens: string[]): void {
     this.wanted = fens
-    if (this.current && !fens.includes(this.current)) this.analyser.stop()
+    if (this.current && !fens.includes(this.current) && !this.extras.includes(this.current)) this.analyser.stop()
+    void this.run()
+  }
+
+  /** Ask for an extra position to be analysed once the game positions are done. */
+  request(fen: string): void {
+    if (this.snapshot.results.has(fen) || this.extras.includes(fen)) return
+    this.extras.push(fen)
     void this.run()
   }
 
@@ -57,7 +66,9 @@ export class AnalysisQueue {
     this.running = true
     try {
       while (!this.disposed) {
-        const fen = this.wanted.find((f) => !this.snapshot.results.has(f))
+        const fen =
+          this.wanted.find((f) => !this.snapshot.results.has(f)) ??
+          this.extras.find((f) => !this.snapshot.results.has(f))
         if (!fen) break
         this.current = fen
         const result = await this.analyser.analyse(fen, (line) => this.update({ live: { fen, line } }))
@@ -67,7 +78,7 @@ export class AnalysisQueue {
           const results = new Map(this.snapshot.results)
           results.set(fen, result)
           this.update({ results, live: null })
-        } else if (this.wanted.includes(fen)) {
+        } else if (this.wanted.includes(fen) || this.extras.includes(fen)) {
           // Stopped but still needed: shouldn't happen, but avoid looping forever.
           break
         }

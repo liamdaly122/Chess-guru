@@ -24,6 +24,8 @@ interface GameState {
   moves: string[]
   /** How many times the user has taken a move back this game. */
   takebacks: number
+  /** Half-move indexes where the user asked for a hint before moving. */
+  hintedPlies: number[]
 }
 
 const SETTINGS_KEY = 'chess-guru:new-game-settings'
@@ -106,13 +108,18 @@ function useOpponent(): { opponent: OpponentEngine | null; ready: boolean; error
   return { opponent, ready, error }
 }
 
-export function usePlayGame() {
+export interface PlayOptions {
+  /** While true, the bot doesn't start its reply (e.g. waiting for the user's move to be rated). */
+  holdBot?: boolean
+}
+
+export function usePlayGame({ holdBot = false }: PlayOptions = {}) {
   const { opponent, ready, error } = useOpponent()
   const [state, setState] = useState<GameState>(() => {
     const s = loadSettings()
     const startFen = fenFromUrl()
     const userColor = startFen ? new Chess(startFen).turn() : resolveColour(s.colour)
-    return { id: 1, userColor, level: findLevel(s.levelRating), startFen, moves: [], takebacks: 0 }
+    return { id: 1, userColor, level: findLevel(s.levelRating), startFen, moves: [], takebacks: 0, hintedPlies: [] }
   })
 
   const game = useMemo(() => replay(state.startFen, state.moves), [state.startFen, state.moves])
@@ -139,7 +146,7 @@ export function usePlayGame() {
 
   // When it's the bot's turn, ask the engine for a move.
   useEffect(() => {
-    if (!opponent || !ready || status.over || game.turn() === state.userColor) return
+    if (!opponent || !ready || holdBot || status.over || game.turn() === state.userColor) return
     const controller = new AbortController()
     const fen = game.fen()
     const startedAt = Date.now()
@@ -160,7 +167,7 @@ export function usePlayGame() {
       .catch((e) => console.error('Bot move failed', e))
 
     return () => controller.abort()
-  }, [opponent, ready, game, status.over, state.userColor, state.level, state.id, state.moves.length])
+  }, [opponent, ready, holdBot, game, status.over, state.userColor, state.level, state.id, state.moves.length])
 
   /** Try to play a move for the user. Returns true if it was legal. */
   const playUserMove = useCallback(
@@ -185,7 +192,13 @@ export function usePlayGame() {
       const g = replay(prev.startFen, prev.moves)
       const n = plyToUndo(prev.moves.length, g.turn(), prev.userColor)
       if (n === 0) return prev
-      return { ...prev, moves: prev.moves.slice(0, -n), takebacks: prev.takebacks + 1 }
+      const moves = prev.moves.slice(0, -n)
+      return {
+        ...prev,
+        moves,
+        takebacks: prev.takebacks + 1,
+        hintedPlies: prev.hintedPlies.filter((p) => p < moves.length),
+      }
     })
   }, [])
 
@@ -197,7 +210,29 @@ export function usePlayGame() {
       level: findLevel(settings.levelRating),
       moves: [],
       takebacks: 0,
+      hintedPlies: [],
     }))
+  }, [])
+
+  /** Same colour and level again. */
+  const rematch = useCallback(() => {
+    setState((prev) => ({
+      id: prev.id + 1,
+      userColor: prev.userColor,
+      level: prev.level,
+      moves: [],
+      takebacks: 0,
+      hintedPlies: [],
+    }))
+  }, [])
+
+  /** Record that the user asked for a hint on the move they are about to play. */
+  const markHintUsed = useCallback(() => {
+    setState((prev) =>
+      prev.hintedPlies.includes(prev.moves.length)
+        ? prev
+        : { ...prev, hintedPlies: [...prev.hintedPlies, prev.moves.length] },
+    )
   }, [])
 
   const canUndo = plyToUndo(state.moves.length, game.turn(), state.userColor) > 0
@@ -211,6 +246,7 @@ export function usePlayGame() {
     userColor: state.userColor,
     level: state.level,
     takebacks: state.takebacks,
+    hintedPlies: state.hintedPlies,
     engineName: opponent?.name ?? 'Engine',
     engineReady: ready,
     engineError: error,
@@ -220,5 +256,7 @@ export function usePlayGame() {
     playUserMove,
     undo,
     newGame,
+    rematch,
+    markHintUsed,
   }
 }

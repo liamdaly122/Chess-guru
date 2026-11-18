@@ -6,9 +6,11 @@ import type { Score } from './score'
 const cp = (n: number): Score => ({ kind: 'cp', cp: n })
 const mate = (moves: number, forUs: boolean): Score => ({ kind: 'mate', moves, forUs })
 
-/** An analysis with one line. `score` is from the side to move in that position. */
-function analysis(score: Score, bestMove: string | null = 'a2a3'): PositionAnalysis {
-  return { fen: 'x', depth: 16, bestMove, lines: [{ multipv: 1, depth: 16, score, pv: bestMove ? [bestMove] : [] }] }
+/** An analysis with one line (or two). `score` is from the side to move in that position. */
+function analysis(score: Score, bestMove: string | null = 'a2a3', second?: Score): PositionAnalysis {
+  const lines = [{ multipv: 1, depth: 16, score, pv: bestMove ? [bestMove] : [] }]
+  if (second) lines.push({ multipv: 2, depth: 16, score: second, pv: ['b2b3'] })
+  return { fen: 'x', depth: 16, bestMove, lines }
 }
 
 /**
@@ -82,5 +84,36 @@ describe('classifyMove', () => {
 
   it('returns null when an analysis is missing', () => {
     expect(classifyMove(undefined, analysis(cp(0)), 'e2e4')).toBeNull()
+  })
+
+  it('rates the best move as great when the second choice is much worse', () => {
+    const before = analysis(cp(50), 'a2a3', cp(-250))
+    const after = analysis(cp(-50))
+    expect(classifyMove(before, after, 'a2a3')!.rating).toBe('great')
+  })
+
+  it('keeps a best move as best when the second choice is close', () => {
+    const before = analysis(cp(50), 'a2a3', cp(30))
+    expect(classifyMove(before, analysis(cp(-50)), 'a2a3')!.rating).toBe('best')
+  })
+
+  it('rates a best move that sacrifices a piece as brilliant', () => {
+    const before = analysis(cp(50), 'a2a3', cp(40))
+    expect(classifyMove(before, analysis(cp(-60)), 'a2a3', { sacrifice: 3 })!.rating).toBe('brilliant')
+  })
+
+  it('does not call a sacrifice brilliant when already completely winning', () => {
+    const before = analysis(cp(1500), 'a2a3')
+    expect(classifyMove(before, analysis(cp(-1500)), 'a2a3', { sacrifice: 3 })!.rating).toBe('best')
+  })
+
+  it('does not call a pawn sacrifice brilliant', () => {
+    const before = analysis(cp(50), 'a2a3')
+    expect(classifyMove(before, analysis(cp(-50)), 'a2a3', { sacrifice: 1 })!.rating).toBe('best')
+  })
+
+  it('does not call a sacrifice brilliant unless it is the best move', () => {
+    const j = rate(cp(50), cp(30))
+    expect(classifyMove(analysis(cp(50)), analysis(cp(-30)), 'h2h3', { sacrifice: 3 })!.rating).toBe(j.rating)
   })
 })

@@ -1,10 +1,19 @@
 import { MATE_RULES, RATING_THRESHOLDS } from '../config/analysis'
+import { BRILLIANT, GREAT_MOVE_GAP } from '../config/coach'
 import type { PositionAnalysis } from '../engine/uciInfo'
 import { negate, winPercent, type Score } from './score'
 
-export type MoveRating = 'best' | 'good' | 'inaccuracy' | 'mistake' | 'blunder'
+export type MoveRating = 'brilliant' | 'great' | 'best' | 'good' | 'inaccuracy' | 'mistake' | 'blunder'
 
-const SEVERITY: Record<MoveRating, number> = { best: 0, good: 1, inaccuracy: 2, mistake: 3, blunder: 4 }
+const SEVERITY: Record<MoveRating, number> = {
+  brilliant: 0,
+  great: 0,
+  best: 0,
+  good: 1,
+  inaccuracy: 2,
+  mistake: 3,
+  blunder: 4,
+}
 
 export interface MoveJudgement {
   rating: MoveRating
@@ -30,18 +39,37 @@ export interface Thresholds {
   blunder: number
 }
 
+export interface ClassifyOptions {
+  /** Material the move gives away, in pawns (from patterns/sacrifice.ts). Needed for "brilliant". */
+  sacrifice?: number
+  thresholds?: Thresholds
+  mateRules?: typeof MATE_RULES
+  greatGap?: number
+  brilliant?: typeof BRILLIANT
+}
+
 /**
  * Rate a move by comparing the engine's analysis of the position before it and after it.
  * Based on the drop in the mover's winning chances, the way Lichess does it, plus Lichess's
  * extra rules for allowing or missing a forced mate. Returns null if either analysis is missing.
+ *
+ * The engine's top move is "best", upgraded to:
+ * - "great" when the engine's second choice was much worse (it was the only good move);
+ * - "brilliant" when it also gives up material and you weren't already completely winning.
  */
 export function classifyMove(
   before: PositionAnalysis | undefined,
   after: PositionAnalysis | undefined,
   played: string,
-  thresholds: Thresholds = RATING_THRESHOLDS,
-  mateRules = MATE_RULES,
+  options: ClassifyOptions = {},
 ): MoveJudgement | null {
+  const {
+    sacrifice = 0,
+    thresholds = RATING_THRESHOLDS,
+    mateRules = MATE_RULES,
+    greatGap = GREAT_MOVE_GAP,
+    brilliant = BRILLIANT,
+  } = options
   const top = before?.lines[0]
   const reply = after?.lines[0]
   if (!before || !top || !reply) return null
@@ -64,9 +92,22 @@ export function classifyMove(
     if (SEVERITY[mate.rating] > SEVERITY[rating]) rating = mate.rating
   }
 
-  if (played === bestMove) rating = 'best'
+  if (played === bestMove) {
+    rating = 'best'
+    const second = before.lines[1]
+    if (second && winPercent(top.score) - winPercent(second.score) >= greatGap) rating = 'great'
+  }
   // Checkmating the opponent is always the best move, whatever the engine's preferred mate was.
   if (scoreAfter.kind === 'mate' && scoreAfter.forUs && scoreAfter.moves === 0) rating = 'best'
+
+  if (
+    (rating === 'best' || rating === 'great') &&
+    sacrifice >= brilliant.minSacrifice &&
+    winBefore < brilliant.maxWinBefore &&
+    winAfter >= brilliant.minWinAfter
+  ) {
+    rating = 'brilliant'
+  }
 
   return { rating, played, bestMove, scoreBefore, scoreAfter, winBefore, winAfter, drop, mateRule }
 }

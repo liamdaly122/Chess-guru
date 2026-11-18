@@ -43,6 +43,14 @@ Testing tip: open `http://localhost:5173/?fen=<FEN>` to start a game from any po
 - **Win% and ratings** follow Lichess: Win% = 50 + 50 * (2 / (1 + e^(-0.00368208 * cp)) - 1), cp capped at +/-1000, mate in N counted as (21 - min(N, 10)) * 100 cp. Rating by Win% drop: 5 inaccuracy, 10 mistake, 15 blunder (Lichess's 0.1/0.2/0.3 on its -1..1 scale). Plus Lichess's mate rules: allowing a forced mate is a blunder (mistake below -7, inaccuracy below -10); missing a forced mate is a blunder (mistake if still above +7, inaccuracy if above +10). The worse of the two ratings is used. The engine's top move is always "best"; delivering checkmate is always "best". Thresholds in `src/config/analysis.ts`.
 - Ratings are derived (not stored) from the analysis cache and the move list, so undone moves simply disappear.
 - The eval bar uses Win% for its fill, like Lichess. It can be hidden (setting stored in localStorage).
+- **Ratings, extra levels (Phase 3):** "great" (!) = engine's top move and the second-best line is at least `GREAT_MOVE_GAP` (10) Win% worse. "brilliant" (!!) = best or great, gives up at least 2 pawns of material (`patterns/sacrifice.ts`, via SEE), not already above 97% Win% before, and not below 40% after. Settings in `src/config/coach.ts`. Glyphs: !! ! ★ ✓ ?! ? ✕ (blunder uses ✕ at the user's request).
+- **Pattern detectors** (`src/patterns/`, all unit tested): static exchange evaluation (`see.ts`) with x-rays and the king-capture rule; hanging pieces = SEE > 0 (not raw attacker counting); forks (target counts if king, worth more than the forker, or undefended; forker must not be winnable); pins and skewers by ray scanning; threats via a null-move position analysed by the engine (`threats.ts`), counted only if worth at least `threatMinGain` Win% and the opponent's best reply after our move is still the threat move.
+- **Coaching** (`src/coach/`): `facts.ts` gathers facts from the engine lines plus the detectors, run on the position after the opponent's best reply and after the engine's best move. `notes.ts` turns the top fact into one sentence on what went wrong plus one "next time" tip. Templates only; no AI. Notes only for mistakes and blunders (`COACH.noteRatings`). No caching needed since there is no API cost.
+- Null-move positions are requested from the analysis queue as "extras" only after a mistake or blunder, and processed after the game positions.
+- **Hints** (`coach/hints.ts`): step 1 says there's something here only if best beats second best by `HINTS.tacticGap` Win% (or there's a forced mate); otherwise it says the position is quiet. Step 2 glows the piece's square, step 3 draws the arrow. Hinted moves are recorded (`hintedPlies`) and shown with a bulb in the move list.
+- **Live coaching**: with it on, the bot waits for the rating of your move (max `COACH.botWaitsForRatingMs`, 2.5 s) so the badge appears on your piece before the bot replies. With it off, ratings and notes are hidden until the game ends, and the coach card then shows a summary.
+- **Board badge** is drawn on an overlay layer (not react-chessboard's `squareRenderer`, which would replace its square styling). It stays on your last move's square until your next move, and hides if the bot captured that piece. Sized with container query units (`cqw`).
+- UI: system font stack, CSS variables for light and dark themes, sage board colours, `<dialog>` for New game and Settings (bottom sheet on phones), preferences in localStorage (`usePreferences`).
 - Board: react-chessboard v5 (`options` prop). It has no built-in promotion dialog, so `PromotionPicker` is ours. Tap-to-move is supported for phones.
 
 ## Defaults chosen (user didn't answer these, change if wanted)
@@ -67,8 +75,13 @@ src/chess/classify.ts          move ratings
 src/config/analysis.ts         analysis depth, rating thresholds, mate rules (edit to tune)
 src/engine/uciInfo.ts          parses engine "info" lines
 src/engine/Analyser.ts         full-strength analysis engine
-src/analysis/                  analysis queue and the React hook that rates moves
-src/features/play/             play screen, board, eval bar, move feedback, promotion picker, move list, new game panel
+src/analysis/                  analysis queue and the React hook that rates moves, writes notes and builds hints
+src/patterns/                  tactical pattern detectors (SEE, hanging, forks, pins/skewers, threats, sacrifice)
+src/coach/                     coaching facts, note templates, hints
+src/config/coach.ts            coaching, great/brilliant and hint settings (edit to tune)
+src/chess/material.ts          captured pieces and material lead
+src/ui/                        styles, icons, switch, modal
+src/features/play/             play screen, board + badge overlay, eval bar, coach card, player strips, game-over card, new game form, move list
 src/ui/styles.css              all styles, mobile-first, dark mode
 ```
 
@@ -76,7 +89,7 @@ src/ui/styles.css              all styles, mobile-first, dark mode
 
 - [x] Phase 1: play against a bot
 - [x] Phase 2: analysis and move ratings
-- [ ] Phase 3: coaching (pattern detectors, template notes, hints)
+- [x] Phase 3: coaching (pattern detectors, template notes, hints) and UI redesign
 - [ ] Phase 4: game review, history, Lichess import
 - [ ] Phase 5: weaknesses, progress page, puzzles
 - [ ] Phase 6: Maia for human-like low levels
