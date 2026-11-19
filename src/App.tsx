@@ -14,6 +14,8 @@ import { GoalMessage } from './features/goal/GoalMessage'
 import { BackgroundReviewer } from './features/review/BackgroundReviewer'
 import { useAutoLichessCheck } from './lichess/autoSync'
 import { queueReviewUpgrades } from './review/upgrades'
+import { WeeklyReportPage } from './features/report/WeeklyReportPage'
+import { useLastWeekReport } from './report/reportStore'
 
 const TABS: { route: Route; label: string; icon: typeof BoardIcon }[] = [
   { route: { name: 'play' }, label: 'Play', icon: BoardIcon },
@@ -28,7 +30,8 @@ export default function App() {
   useEffect(() => {
     void queueReviewUpgrades()
   }, [])
-  const tab = route.name === 'review' ? 'games' : route.name
+  const tab = route.name === 'review' ? 'games' : route.name === 'report' ? 'progress' : route.name
+  const reportIsNew = useLastWeekReport()?.isNew ?? false
 
   return (
     <div className={`app route-${route.name}`}>
@@ -47,6 +50,7 @@ export default function App() {
             <a key={label} href={routeHref(r)} aria-current={tab === r.name ? 'page' : undefined}>
               <Icon className="tab-icon" />
               <span>{label}</span>
+              {r.name === 'progress' && reportIsNew && <span className="tab-dot" aria-label="New weekly report" data-testid="report-dot" />}
             </a>
           ))}
         </nav>
@@ -68,6 +72,7 @@ export default function App() {
             {route.name === 'games' && <GamesScreen />}
             {route.name === 'review' && <ReviewScreen id={route.id} />}
             {route.name === 'progress' && <ProgressScreen />}
+            {route.name === 'report' && <WeeklyReportPage weekKey={route.week} />}
             {route.name === 'train' && <TrainScreen page={route.theme} />}
           </ErrorBoundary>
         )}

@@ -14,6 +14,9 @@ describe('routes', () => {
     expect(routeHref({ name: 'train', theme: 'mateIn2' })).toBe('#/train/mateIn2')
     expect(parseHash('#/train/lesson-forks')).toEqual({ name: 'train', theme: 'lesson-forks' })
     expect(parseHash('#/train')).toEqual({ name: 'train' })
+    expect(parseHash('#/report')).toEqual({ name: 'report' })
+    expect(parseHash('#/report/2026-11-16')).toEqual({ name: 'report', week: '2026-11-16' })
+    expect(routeHref({ name: 'report', week: '2026-11-16' })).toBe('#/report/2026-11-16')
     expect(parseHash('#/nonsense')).toEqual({ name: 'play' })
   })
 

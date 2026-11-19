@@ -4290,3 +4290,147 @@ a.chip.active {
 .session-progress {
   margin: 0 0 8px;
 }
+
+/* ---------- Weekly report ---------- */
+
+.report-screen {
+  display: grid;
+  gap: 14px;
+  max-width: 760px;
+}
+
+.report-screen > .games-head {
+  margin-bottom: 0;
+}
+
+/* The board-steadying minimum height isn't needed here. */
+.report-screen .coach-speech {
+  min-height: 0;
+}
+
+.tabs a {
+  position: relative;
+}
+
+.tab-dot {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--r-blunder);
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+.report-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.report-card.is-new {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), var(--shadow);
+}
+
+.report-card-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.report-card-text p {
+  margin: 2px 0 0;
+}
+
+.new-chip {
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+}
+
+.week-nav {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  gap: 8px;
+}
+
+.week-step {
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  padding: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.week-step.disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.week-name {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.focus-card .focus-title {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.focus-card .muted {
+  margin: 0 0 12px;
+}
+
+.report-tiles {
+  margin: 0;
+}
+
+.report-facts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.report-facts li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 9px 0;
+  border-top: 1px solid var(--border);
+}
+
+.report-facts li:first-child {
+  border-top: none;
+}
+
+.report-facts a {
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+.report-chip {
+  margin: 0 0 0 8px;
+}
+
+.report-screen .unreviewed {
+  margin: 0;
+}
+
+@media (min-width: 860px) {
+  .report-tiles {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

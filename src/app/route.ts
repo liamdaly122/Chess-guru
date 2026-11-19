@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 
 /**
- * Tiny hash-based router: #/ (play), #/games, #/review/<id>, #/progress, #/train[/<page>].
+ * Tiny hash-based router: #/ (play), #/games, #/review/<id>, #/progress, #/report[/<monday>],
+ * #/train[/<page>].
  * Old #/puzzles links still open Train.
  * Hash URLs work on any static host (Vercel) and in an iPhone app wrapper, with no server config.
  */
@@ -11,11 +12,15 @@ export type Route =
   | { name: 'review'; id: string }
   | { name: 'progress' }
   | { name: 'train'; theme?: string }
+  | { name: 'report'; week?: string }
 
 export function parseHash(hash: string): Route {
   const path = hash.replace(/^#\/?/, '')
   if (path === 'games') return { name: 'games' }
   if (path === 'progress') return { name: 'progress' }
+  if (path === 'report') return { name: 'report' }
+  const report = path.match(/^report\/(\d{4}-\d{2}-\d{2})$/)
+  if (report) return { name: 'report', week: report[1] }
   if (path === 'train' || path === 'puzzles') return { name: 'train' }
   const train = path.match(/^(?:train|puzzles)\/([A-Za-z0-9-]+)$/)
   if (train) return { name: 'train', theme: train[1] }
@@ -36,6 +41,8 @@ export function routeHref(route: Route): string {
       return '#/progress'
     case 'train':
       return route.theme ? `#/train/${route.theme}` : '#/train'
+    case 'report':
+      return route.week ? `#/report/${route.week}` : '#/report'
   }
 }
 

@@ -49,6 +49,7 @@ async function tour(name, ctxOpts, browser) {
   await shot('review', true);
   await page.getByRole('button', { name: 'Explore' }).click(); await page.waitForTimeout(2500); await shot('review-explore', false);
   await page.goto(BASE + '#/progress'); await shot('progress', true);
+  await page.goto(BASE + '#/report'); await page.getByTestId('weekly-report').waitFor(); await shot('report', true);
   await page.goto(BASE + '#/train'); await page.getByTestId('train-plan').waitFor(); await shot('train', true);
   await page.goto(BASE + '#/train/puzzles'); await page.getByTestId('puzzle-card').waitFor(); await shot('puzzles', true);
   await page.goto(BASE + '#/train/lessons'); await page.getByTestId('lessons-card').waitFor(); await shot('lessons', true);

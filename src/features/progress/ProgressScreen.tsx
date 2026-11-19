@@ -18,6 +18,7 @@ import { GoalCard } from '../goal/GoalCard'
 import { queueReviews, useReviewQueue } from '../../review/reviewQueue'
 import { RATING } from '../../config/rating'
 import { threatScore, useThreatResults } from '../../coach/threatQuizStore'
+import { ReportCard } from '../report/ReportCard'
 import { lichessRatings, puzzleStartRating, ratingSummary } from '../../rating/estimate'
 
 type Filter = 'all' | 'bot' | 'lichess'
@@ -81,6 +82,7 @@ export function ProgressScreen() {
         </div>
       </div>
 
+      <ReportCard />
       <div className="progress-top">
         <GoalCard />
       <section className="card strength-card" data-testid="strength">
