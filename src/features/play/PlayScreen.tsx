@@ -116,8 +116,10 @@ export function PlayScreen() {
         id: `threat-quiz:${quiz.asking.fen}`,
         tone: 'hint',
         title: `What does ${COLOR_NAME[quiz.asking.opponent]} want?`,
-        text: `If it were ${COLOR_NAME[quiz.asking.opponent]}'s move again, what would they play? Move one of their pieces to show me.`,
-        actions: [
+        text: quiz.checking
+          ? 'Checking your answer with the engine…'
+          : `If it were ${COLOR_NAME[quiz.asking.opponent]}'s move again, what would they play? Move one of their pieces to show me.`,
+        actions: quiz.checking ? [] : [
           { label: 'No threat', onClick: () => quiz.answer('none') },
           { label: 'Skip', onClick: () => quiz.skip() },
         ],

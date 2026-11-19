@@ -49,8 +49,21 @@ export function AccuracyChart({ points }: { points: AccuracyPoint[] }) {
         {n > 1 && <span>{formatDate(points[n - 1].endedAt)}</span>}
       </div>
       <p className="chart-legend muted small">
-        <span className="legend-dot dot-bot" /> vs bot <span className="legend-dot dot-lichess" /> Lichess{' '}
-        <span className="legend-line" /> average of last 5
+        {points.some((p) => p.source === 'bot') && (
+          <span className="legend-item">
+            <span className="legend-dot dot-bot" /> vs bot
+          </span>
+        )}
+        {points.some((p) => p.source === 'lichess') && (
+          <span className="legend-item">
+            <span className="legend-dot dot-lichess" /> Lichess
+          </span>
+        )}
+        {n > 1 && (
+          <span className="legend-item">
+            <span className="legend-line" /> average of last 5
+          </span>
+        )}
       </p>
     </div>
   )

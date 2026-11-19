@@ -105,6 +105,8 @@ function VisionRun({ drill, set, onAgain }: { drill: VisionDrill; set: VisionQue
   const [done, setDone] = useState<{ ms: number; best: boolean } | null>(null)
   const [startedAt] = useState(() => Date.now())
   const finishedAt = useRef<number | null>(null)
+  // Saving is asynchronous: a second tap on Finish must not save or count the set twice.
+  const saving = useRef(false)
   const q = set[index]
 
   const board = useMemo(() => new Chess(result && q.finalFen ? q.finalFen : q.fen), [q, result])
@@ -144,6 +146,8 @@ function VisionRun({ drill, set, onAgain }: { drill: VisionDrill; set: VisionQue
       setResult(null)
       return
     }
+    if (saving.current) return
+    saving.current = true
     const ms = (finishedAt.current ?? Date.now()) - startedAt
     const right = score.filter(Boolean).length
     void countPuzzleDone()

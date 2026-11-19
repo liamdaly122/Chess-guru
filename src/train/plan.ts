@@ -76,7 +76,7 @@ export function trainPlan({ now, mistakes, openings, lessons, puzzlesToday, page
 
   items.push({
     id: 'puzzles',
-    title: 'Puzzles',
+    title: 'Rated puzzles',
     detail: `${Math.min(puzzlesToday, PLAN_PUZZLES)} of ${PLAN_PUZZLES} today`,
     page: pages.puzzles,
     done: puzzlesToday >= PLAN_PUZZLES,

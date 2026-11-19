@@ -198,8 +198,8 @@ function DrillView({ drill: given, book, onNext }: { drill: OpeningDrill; book: 
         <p className="puzzle-prompt">
           <span className={`side-chip side-${drill.side}`} /> {drill.name}
         </p>
-        <p className="muted small drill-sub">
-          {drill.eco} · as {SIDE[drill.side]} · {drill.san.length} half-moves
+        <p className="small drill-sub muted" data-testid="opening-prompt">
+          {done ? 'Line complete.' : expected ? promptText : 'Your opponent is moving…'}
         </p>
         <MoveStrip history={history} ratings={[]} />
         <GameBoard
@@ -225,7 +225,9 @@ function DrillView({ drill: given, book, onNext }: { drill: OpeningDrill; book: 
                   {feedback.text}
                 </p>
               ) : (
-                <p className="muted">{expected ? promptText : 'Your opponent is moving…'}</p>
+                <p className="muted small">
+                  {drill.eco} · as {SIDE[drill.side]} · {Math.ceil(drill.san.length / 2)} moves
+                </p>
               )}
               {!learning && (
                 <div className="puzzle-actions">

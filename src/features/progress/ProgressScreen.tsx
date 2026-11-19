@@ -220,7 +220,7 @@ export function ProgressScreen() {
           )}
         </section>
 
-        <section className="card" aria-label="Puzzles">
+        <section className="card practise-card" aria-label="Puzzles">
           <h2 className="card-title">Practise your weak spots</h2>
           {stats.patterns[0] && (
             <a
@@ -234,7 +234,7 @@ export function ProgressScreen() {
           {mistakeInfo && (
             <a className="mistakes-link" href={routeHref({ name: 'train', theme: 'mistakes' })} data-testid="progress-mistakes">
               <strong>Your most common mistake:</strong> {mistakeInfo.top.label.toLowerCase()} (
-              {mistakeInfo.top.times || mistakeInfo.top.timesEver} times).{' '}
+              {timesText(mistakeInfo.top.times || mistakeInfo.top.timesEver)}).{' '}
               {mistakeInfo.today > 0 ? `${mistakeInfo.today} to solve today.` : 'Done for today.'}
             </a>
           )}
@@ -283,4 +283,9 @@ export function ProgressScreen() {
 
 function plural(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? '' : 's'}`
+}
+
+/** "once", "twice", "3 times" */
+function timesText(n: number): string {
+  return n === 1 ? 'once' : n === 2 ? 'twice' : `${n} times`
 }

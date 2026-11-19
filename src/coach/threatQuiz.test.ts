@@ -6,7 +6,7 @@ import type { Score } from '../chess/score'
 import type { PositionAnalysis } from '../engine/uciInfo'
 import { nullMoveFen } from '../patterns/threats'
 import { resetDbForTests } from '../storage/db'
-import { checkThreatAnswer, shouldAskThreat, threatAnswerText, threatQuestion } from './threatQuiz'
+import { answerIsThreatToo, checkThreatAnswer, positionAfterAnswer, shouldAskThreat, threatAnswerText, threatQuestion } from './threatQuiz'
 import { getThreatResults, recordThreatResult, threatScore } from './threatQuizStore'
 
 function fenAfter(sans: string[]): string {
@@ -65,6 +65,23 @@ describe('threat quiz', () => {
       ]),
     )!
     expect(checkThreatAnswer(q, 'd8g5')).toBe('right')
+  })
+
+  it('checks an answer that is not one of the engine lines', () => {
+    // 1.e4 e5 2.Nf3 Nc6 3.Ng5 h6: the engine's threat is hxg5; ...Qxg5 is checked separately.
+    const fen = fenAfter(['e4', 'e5', 'Nf3', 'Nc6', 'Ng5', 'h6'])
+    const q = threatQuestion(fen, analysis(fen, [{ score: even, pv: ['g5f3'] }]), analysis(nullMoveFen(fen)!, [{ score: { kind: 'cp', cp: 300 }, pv: ['h6g5'] }]))!
+    expect(checkThreatAnswer(q, 'd8g5')).toBe('close') // right square, wrong piece
+    const after = positionAfterAnswer(q, 'd8g5')!
+    expect(new Chess(after).turn()).toBe('w')
+    expect(positionAfterAnswer(q, 'none')).toBeNull()
+    // White to move and 3 pawns down: a real threat for Black too.
+    expect(answerIsThreatToo(q, analysis(after, [{ score: { kind: 'cp', cp: -300 }, pv: ['a2a3'] }]))).toBe(true)
+    expect(answerIsThreatToo(q, analysis(after, [{ score: { kind: 'cp', cp: 0 }, pv: ['a2a3'] }]))).toBe(false)
+    expect(threatAnswerText(q, 'right', 'd8g5')).toEqual({
+      title: 'That works too',
+      text: "Qxg5 would be a real threat as well. The engine's first choice: hxg5, winning your knight on g5. Now find your move.",
+    })
   })
 
   it('a quiet position wants "No threat"; in-between positions are not asked', () => {

@@ -2126,7 +2126,18 @@ button.danger {
   .progress-grid {
     grid-template-columns: 1fr 1fr;
   }
-  .chart-card {
+  .chart-card,
+  .practise-card {
+    grid-column: 1 / -1;
+  }
+  /* The practice links sit in two columns across the full width. */
+  .practise-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 10px;
+    align-content: start;
+  }
+  .practise-card > :not(.mistakes-link) {
     grid-column: 1 / -1;
   }
 }
@@ -2212,8 +2223,16 @@ button.danger {
 .chart-legend {
   display: flex;
   align-items: center;
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: 4px 14px;
   margin: 6px 0 0;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
 }
 
 .legend-dot {
@@ -2221,7 +2240,6 @@ button.danger {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  margin-left: 8px;
 }
 
 .legend-line {
@@ -2230,7 +2248,6 @@ button.danger {
   height: 3px;
   border-radius: 2px;
   background: var(--accent);
-  margin-left: 8px;
 }
 
 .bars {
@@ -3975,13 +3992,16 @@ a.chip.active {
 }
 
 .review-actions-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
+/* Buttons share the row and grow to fit their label, so "Back to game" never spills out. */
 .review-actions-row .tool-button {
-  width: 100%;
+  flex: 1 1 auto;
+  min-width: 76px;
+  white-space: nowrap;
 }
 
 @media (max-width: 700px) {
@@ -4254,8 +4274,7 @@ a.chip.active {
   width: 26px;
   height: 26px;
   border-radius: 999px;
-  border: 2px solid var(--border);
-  box-shadow: inset 0 0 0 1px var(--surface-3);
+  border: 2px solid color-mix(in srgb, var(--muted) 45%, transparent);
   color: var(--accent-text);
 }
 

@@ -99,6 +99,30 @@ export function checkThreatAnswer(q: ThreatQuestion, answer: string | 'none'): T
   return 'wrong'
 }
 
+/**
+ * The position after your answer (one of your opponent's moves in the null-move position), to
+ * check with the engine whether it is a real threat too. Null for "none" or an illegal move.
+ */
+export function positionAfterAnswer(q: ThreatQuestion, answer: string | 'none'): string | null {
+  if (answer === 'none') return null
+  try {
+    const game = new Chess(q.nullFen)
+    game.move(parseUci(answer))
+    return game.isGameOver() ? null : game.fen()
+  } catch {
+    return null
+  }
+}
+
+/** Whether the engine's look at the position after your answer shows it is a real threat as well. */
+export function answerIsThreatToo(q: ThreatQuestion, after: PositionAnalysis): boolean {
+  const top = after.lines[0]
+  if (!top || q.kind !== 'threat') return false
+  // You are to move after their move, so the score is from your side.
+  const theirs = 100 - winPercent(top.score)
+  return theirs - (100 - q.yourWin) >= THREAT_QUIZ.minGain
+}
+
 /** The coach's reply to your answer. */
 export function threatAnswerText(q: ThreatQuestion, verdict: ThreatVerdict, answer: string | 'none'): { title: string; text: string } {
   const them = COLOR_NAME[q.opponent]
@@ -108,7 +132,14 @@ export function threatAnswerText(q: ThreatQuestion, verdict: ThreatVerdict, answ
     const san = answer === 'none' ? null : uciToSan(q.nullFen, answer)
     return { title: 'Not a real threat', text: `${san ? `${san} wouldn't hurt you much. ` : ''}${q.explanation}` }
   }
-  if (verdict === 'right') return { title: 'Well spotted', text: q.explanation + after }
+  if (verdict === 'right') {
+    const different = answer !== 'none' && !q.accepted.some((m) => m.slice(0, 4) === answer.slice(0, 4))
+    const san = different ? uciToSan(q.nullFen, answer) : null
+    if (different && san && !q.explanation.includes(`${san},`)) {
+      return { title: 'That works too', text: `${san} would be a real threat as well. The engine's first choice: ${q.explanation.replace(/^(White|Black) threatens /, '')}${after}` }
+    }
+    return { title: 'Well spotted', text: q.explanation + after }
+  }
   if (answer === 'none') return { title: `${them} does have a threat`, text: q.explanation + after }
   if (verdict === 'close') {
     const samePiece = answer.slice(0, 2) === q.move?.slice(0, 2)
