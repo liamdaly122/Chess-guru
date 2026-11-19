@@ -238,6 +238,9 @@ export function ProgressScreen() {
               {mistakeInfo.today > 0 ? `${mistakeInfo.today} to solve today.` : 'Done for today.'}
             </a>
           )}
+          <a className="mistakes-link" href={routeHref({ name: 'openings' })} data-testid="progress-opening-report">
+            <strong>Your opening report:</strong> results, time in book and the position at move 10 for each opening you play
+          </a>
           <a className="mistakes-link" href={routeHref({ name: 'train', theme: 'openings' })} data-testid="progress-openings">
             <strong>Your openings:</strong>{' '}
             {openingInfo && openingInfo.total > 0

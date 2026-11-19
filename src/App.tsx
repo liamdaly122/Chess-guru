@@ -15,6 +15,7 @@ import { BackgroundReviewer } from './features/review/BackgroundReviewer'
 import { useAutoLichessCheck } from './lichess/autoSync'
 import { queueReviewUpgrades } from './review/upgrades'
 import { WeeklyReportPage } from './features/report/WeeklyReportPage'
+import { OpeningReportPage } from './features/openingReport/OpeningReportPage'
 import { useLastWeekReport } from './report/reportStore'
 
 const TABS: { route: Route; label: string; icon: typeof BoardIcon }[] = [
@@ -30,7 +31,7 @@ export default function App() {
   useEffect(() => {
     void queueReviewUpgrades()
   }, [])
-  const tab = route.name === 'review' ? 'games' : route.name === 'report' ? 'progress' : route.name
+  const tab = route.name === 'review' ? 'games' : route.name === 'report' || route.name === 'openings' ? 'progress' : route.name
   const reportIsNew = useLastWeekReport()?.isNew ?? false
 
   return (
@@ -73,6 +74,7 @@ export default function App() {
             {route.name === 'review' && <ReviewScreen id={route.id} />}
             {route.name === 'progress' && <ProgressScreen />}
             {route.name === 'report' && <WeeklyReportPage weekKey={route.week} />}
+            {route.name === 'openings' && <OpeningReportPage />}
             {route.name === 'train' && <TrainScreen page={route.theme} />}
           </ErrorBoundary>
         )}

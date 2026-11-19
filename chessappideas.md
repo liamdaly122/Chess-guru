@@ -2,16 +2,11 @@
 
 By Liam Daly. A list of possible improvements, roughly in the order I'd consider them. Effort is a rough guide: small (an afternoon), medium (a day or two), large (several days).
 
-Done so far: human-like Maia-3 bots, installable app, puzzles from your own mistakes (with spaced repetition), backup to Files / iCloud Drive, the opening trainer, automatic Lichess import (with background reviews), the rating estimate, the adaptive bot, the daily goal with streaks, mistakes grouped by pattern, and a Chess.com-style game review (key moments, Retry, Follow-up and Explore, which cover the old "guess the move" and "try alternatives" ideas), blunder check mode, Play it out (win the won position, hold the bad position), endgame drills, lessons for each mistake type, the threat quiz ("What does my opponent want?"), a Train home page with today's plan, the weekly report and board vision drills.
+Done so far: human-like Maia-3 bots, installable app, puzzles from your own mistakes (with spaced repetition), backup to Files / iCloud Drive, the opening trainer, automatic Lichess import (with background reviews), the rating estimate, the adaptive bot, the daily goal with streaks, mistakes grouped by pattern, and a Chess.com-style game review (key moments, Retry, Follow-up and Explore, which cover the old "guess the move" and "try alternatives" ideas), blunder check mode, Play it out (win the won position, hold the bad position), endgame drills, lessons for each mistake type, the threat quiz ("What does my opponent want?"), a Train home page with today's plan, the weekly report, board vision drills and the opening report.
 
 ## Becoming a better player
 
-Ideas aimed at playing better, built on what the app already has (the engine, reviewed games and the coaching facts). None need a server or AI, and none can help in a live game elsewhere. Next suggested: the opening report.
-
-### Learn from patterns in my games
-
-**Opening report** (small)
-For each opening I play: games, score, how long I stay in book, and how the position looks at move 10. Shows which openings cost me points and links to the opening trainer.
+Ideas aimed at playing better, built on what the app already has (the engine, reviewed games and the coaching facts). None need a server or AI, and none can help in a live game elsewhere. Every idea from this section has been built; new ones go here.
 
 ## Accounts and saving progress
 

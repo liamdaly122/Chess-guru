@@ -207,6 +207,9 @@ export function WeeklyReportPage({ weekKey }: { weekKey?: string }) {
               </li>
             ))}
           </ul>
+          <a className="small see-all" href={routeHref({ name: 'openings' })}>
+            All your openings
+          </a>
         </section>
       )}
 

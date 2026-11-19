@@ -125,6 +125,11 @@ function OpeningsRoute({ page }: { page: string }) {
     <TrainPage
       title={nested ? 'Your opening lines' : 'Openings'}
       back={nested ? { label: 'Openings', href: href(OPENINGS) } : TRAIN}
+      right={
+        <a className="small" href={routeHref({ name: 'openings' })} data-testid="opening-report-link">
+          Your opening report
+        </a>
+      }
     >
       {!drills ? <p className="muted">Loading…</p> : lines ? <OpeningLines drills={drills} /> : <OpeningTrainer drills={drills} />}
     </TrainPage>

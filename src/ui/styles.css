@@ -4505,3 +4505,107 @@ a.chip.active {
 .vision-progress {
   margin: 10px 0 0;
 }
+
+/* ---------- Opening report ---------- */
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.opening-stats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.opening-stat {
+  border-top: 1px solid var(--border);
+}
+
+.opening-stat:first-child {
+  border-top: none;
+}
+
+.opening-stat summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  cursor: pointer;
+  list-style: none;
+}
+
+.opening-stat summary::-webkit-details-marker {
+  display: none;
+}
+
+.opening-stat-head {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.opening-stat-head .line-name {
+  margin: 0;
+}
+
+.result-bar {
+  flex: none;
+  display: flex;
+  width: 84px;
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface-3);
+}
+
+.bar-win {
+  background: var(--r-best);
+}
+
+.bar-draw {
+  background: var(--muted);
+  opacity: 0.45;
+}
+
+.bar-loss {
+  background: var(--r-blunder);
+}
+
+.opening-stat[open] summary,
+.opening-stat details[open] summary {
+  padding-bottom: 4px;
+}
+
+.opening-variations {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+  font-weight: 700;
+}
+
+.opening-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0 14px;
+}
+
+.opening-actions p {
+  flex-basis: 100%;
+  margin: 0 0 4px;
+}
+
+.opening-chevron {
+  transition: transform 0.15s ease;
+}
+
+.opening-stat details[open] .opening-chevron {
+  transform: rotate(90deg);
+}
