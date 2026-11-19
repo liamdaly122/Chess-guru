@@ -7,3 +7,6 @@ export const MISTAKE_PATTERN_PREFIX = 'mistakes-p-'
 export function isMistakesRoute(theme: string | undefined): boolean {
   return !!theme && (theme === MISTAKES || theme.startsWith(`${MISTAKES}-`))
 }
+
+/** Play it out: positions from your games to win or hold. */
+export const MISTAKES_POSITIONS = 'mistakes-positions'

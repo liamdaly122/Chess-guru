@@ -62,7 +62,8 @@ export function useSaveBotGame(play: Play, analysis: Analysis, opening: Opening 
   const lastSaved = useRef('')
 
   useEffect(() => {
-    if (!review || !play.status.over) return
+    // Play it out positions are practice, not games: never saved.
+    if (!review || !play.status.over || play.practice) return
     const key = `${play.uid}:${play.moves.length}:${play.status.reason}:${review.complete}`
     if (key === lastSaved.current) return
     lastSaved.current = key
@@ -72,11 +73,11 @@ export function useSaveBotGame(play: Play, analysis: Analysis, opening: Opening 
 
   /** Save the game in progress as a loss by resignation (used before starting a new game). */
   const saveAsResigned = useCallback(() => {
-    if (play.status.over || !userMoved) return
+    if (play.status.over || !userMoved || play.practice) return
     const winner = play.userColor === 'w' ? 'b' : 'w'
     const status: Finished = { over: true, result: winner === 'w' ? '1-0' : '0-1', reason: 'resignation', winner }
     void saveGame(botRecord(play, status, makeReview(), Date.now(), opening))
   }, [play, userMoved, makeReview, opening])
 
-  return { saveAsResigned, inProgress: !play.status.over && userMoved }
+  return { saveAsResigned, inProgress: !play.status.over && userMoved && !play.practice }
 }

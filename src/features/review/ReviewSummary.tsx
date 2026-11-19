@@ -2,6 +2,8 @@ import type { Color } from 'chess.js'
 import type { MoveRating } from '../../chess/classify'
 import { gameVerdict, moveName, phaseGrade, phaseScores, type KeyMoment } from '../../review/keyMoments'
 import { MOMENT_LABEL, momentRating } from './moments'
+import { practiceFromGame } from '../../practice/positions'
+import { requestPractice } from '../../practice/startRequest'
 import { PHASE_LABEL } from '../../review/gamePhase'
 import type { GameReview } from '../../review/types'
 import { opponentOf } from '../../storage/gameInfo'
@@ -34,6 +36,7 @@ export function ReviewSummary({ game, review, moments, onStart, onJump }: Props)
   const them: Color = game.userColor === 'w' ? 'b' : 'w'
   const rows = ORDER.map((r) => ({ r, you: count(review, game.userColor, r), opp: count(review, them, r) })).filter((x) => x.you || x.opp)
   const phases = phaseScores(review, game.userColor)
+  const practice = review.complete ? practiceFromGame({ ...game, review }) : []
 
   return (
     <div className="review-overview" data-testid="review-summary">
@@ -111,6 +114,27 @@ export function ReviewSummary({ game, review, moments, onStart, onJump }: Props)
                 </li>
               )
             })}
+          </ul>
+        </section>
+      )}
+
+      {practice.length > 0 && (
+        <section className="card" aria-label="Play it out" data-testid="review-practice">
+          <h2 className="card-title">Play it out</h2>
+          <ul className="line-list">
+            {practice.map((p) => (
+              <li key={p.id} className="line-row">
+                <div className="line-info">
+                  <p className="line-name">{p.kind === 'win' ? 'Win the won position' : 'Hold the bad position'}</p>
+                  <p className="muted small">
+                    {p.kind === 'win' ? 'You were winning' : 'You were worse but it could be saved'} ({p.evalText}) before {p.played}.
+                  </p>
+                </div>
+                <button type="button" className="primary solve-button" onClick={() => requestPractice(p)}>
+                  Play
+                </button>
+              </li>
+            ))}
           </ul>
         </section>
       )}

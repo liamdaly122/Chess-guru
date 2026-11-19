@@ -7,6 +7,7 @@ import { getGameStatus, type GameStatus } from '../../chess/gameStatus'
 import { parseUci, plyToUndo, type MoveInput } from '../../chess/moves'
 import type { OpponentEngine } from '../../engine/OpponentEngine'
 import { BotOpponent } from '../../engine/BotOpponent'
+import type { PracticePosition } from '../../practice/positions'
 
 export type ColourChoice = 'w' | 'b' | 'random'
 
@@ -40,6 +41,10 @@ interface GameState {
   blunderCheck: boolean
   /** Times blunder check stopped the user (taken back or played anyway). */
   blunderChecks: number
+  /** Play it out: the position from one of the user's games being played on. Never saved as a game. */
+  practice?: PracticePosition
+  /** Play it out: the user claimed the win, or counted the position as held. */
+  claimed?: 'win' | 'held'
 }
 
 const SETTINGS_KEY = 'chess-guru:new-game-settings'
@@ -177,8 +182,12 @@ export function usePlayGame({ holdBot = false }: PlayOptions = {}) {
       const winner = state.userColor === 'w' ? 'b' : 'w'
       return { over: true, result: winner === 'w' ? '1-0' : '0-1', reason: 'resignation', winner }
     }
+    if (state.claimed === 'win') {
+      return { over: true, result: state.userColor === 'w' ? '1-0' : '0-1', reason: 'claim', winner: state.userColor }
+    }
+    if (state.claimed === 'held') return { over: true, result: '1/2-1/2', reason: 'claim', winner: null }
     return getGameStatus(game)
-  }, [game, state.resigned, state.userColor])
+  }, [game, state.resigned, state.claimed, state.userColor])
   const history = useMemo<Move[]>(() => game.history({ verbose: true }), [game])
   /** Every position in the game, start to now, as FENs. Used by the analyser. */
   const positions = useMemo(
@@ -281,9 +290,28 @@ export function usePlayGame({ holdBot = false }: PlayOptions = {}) {
     setState((prev) => freshGame(prev.id + 1, resolveColour(settings.colour), findLevel(settings.levelRating)))
   }, [])
 
-  /** Same colour again, at the same level (or the one given, for the adaptive bot). */
+  /** Same colour again, at the same level (or the one given, for the adaptive bot). A practice position starts again. */
   const rematch = useCallback((levelRating?: number) => {
-    setState((prev) => freshGame(prev.id + 1, prev.userColor, levelRating ? findLevel(levelRating) : prev.level))
+    setState((prev) =>
+      prev.practice
+        ? { ...freshGame(prev.id + 1, prev.userColor, prev.level, prev.practice.fen), practice: prev.practice }
+        : freshGame(prev.id + 1, prev.userColor, levelRating ? findLevel(levelRating) : prev.level),
+    )
+  }, [])
+
+  /** Play it out: start from a position in one of the user's saved games. */
+  const startPractice = useCallback((position: PracticePosition) => {
+    try {
+      new Chess(position.fen) // only positions chess.js accepts ever reach the engine
+    } catch {
+      return
+    }
+    setState((prev) => ({ ...freshGame(prev.id + 1, position.userColor, findLevel(position.levelRating), position.fen), practice: position }))
+  }, [])
+
+  /** Play it out: claim the win, or count the position as held. */
+  const claim = useCallback((kind: 'win' | 'held') => {
+    setState((prev) => (prev.practice ? { ...prev, claimed: kind } : prev))
   }, [])
 
   const resign = useCallback(() => {
@@ -330,6 +358,9 @@ export function usePlayGame({ holdBot = false }: PlayOptions = {}) {
     undo,
     newGame,
     rematch,
+    practice: state.practice ?? null,
+    startPractice,
+    claim,
     resign,
     markHintUsed,
   }

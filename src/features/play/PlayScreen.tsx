@@ -1,5 +1,5 @@
 import type { Chess, Color, Move, Square } from 'chess.js'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { latestEval, useGameAnalysis, type PlyRating } from '../../analysis/useGameAnalysis'
 import { describeStatus, type GameStatus } from '../../chess/gameStatus'
 import { materialSummary } from '../../chess/material'
@@ -12,6 +12,12 @@ import { CoachCard } from './CoachCard'
 import { coachMessage, type CoachMessage } from './coachMessage'
 import { BLUNDER_CHECK } from '../../config/blunderCheck'
 import { needsBlunderCheck } from '../../coach/blunderCheck'
+import { PLAY_IT_OUT } from '../../config/playItOut'
+import { practiceSucceeded, type PracticePosition } from '../../practice/positions'
+import { recordPracticeTry } from '../../practice/practiceStore'
+import { onPracticeRequest } from '../../practice/startRequest'
+import { countPuzzleDone } from '../../goal/goalStore'
+import { formatDate } from '../../storage/gameInfo'
 import { MoveStrip } from './MoveStrip'
 import { EvalBar } from './EvalBar'
 import { GameBoard, type BoardBadge } from './GameBoard'
@@ -23,7 +29,7 @@ import { loadSettings, saveSettings, usePlayGame } from './usePlayGame'
 import { nextLevelRating } from '../../rating/adaptive'
 import { mainPattern, PATTERNS } from '../../puzzles/patterns'
 import { routeHref } from '../../app/route'
-import { MISTAKE_PATTERN_PREFIX } from '../puzzles/mistakeRoutes'
+import { MISTAKE_PATTERN_PREFIX, MISTAKES_POSITIONS } from '../puzzles/mistakeRoutes'
 import { findLevel } from '../../config/levels'
 import { usePreferences } from './usePreferences'
 import { AboutSection } from '../settings/AboutSection'
@@ -53,6 +59,7 @@ export function PlayScreen() {
     [analysis.notes, play.history, play.userColor],
   )
   const saver = useSaveBotGame(play, analysis, openingInfo?.status.opening ?? null)
+
 
   // With live coaching on, let the rating of your move appear before the bot replies,
   // but never wait longer than COACH.botWaitsForRatingMs (longer with blunder check, which needs it).
@@ -97,6 +104,19 @@ export function PlayScreen() {
   const [modal, setModal] = useState<'new' | 'settings' | null>(null)
   const [dismissedGameOver, setDismissedGameOver] = useState<number | null>(null)
 
+  // Play it out: a list asks to start a position from one of your games.
+  const startPracticeRef = useRef<(p: PracticePosition) => void>(() => {})
+  useEffect(() => {
+    startPracticeRef.current = (position) => {
+      if (saver.inProgress && !window.confirm('Start this position? Your current game will count as resigned.')) return
+      saver.saveAsResigned()
+      play.startPractice(position)
+      setFlipped(false)
+      setModal(null)
+    }
+  })
+  useEffect(() => onPracticeRequest((p) => startPracticeRef.current(p)), [])
+
   // Hint steps reset whenever the position changes.
   const [hintState, setHintState] = useState({ fen: play.fen, step: 0 })
   const hintStep = hintState.fen === play.fen ? hintState.step : 0
@@ -130,10 +150,21 @@ export function PlayScreen() {
           label: findLevel(adaptiveRating).label,
           change: adaptiveRating > play.level.rating ? 'up' : adaptiveRating < play.level.rating ? 'down' : 'same',
         }
-  const main = play.status.over ? mainPattern(userNotes) : null
+  const main = play.status.over && !play.practice ? mainPattern(userNotes) : null
   const mainMistake = main
     ? { label: PATTERNS[main.pattern].label, count: main.count, href: routeHref({ name: 'puzzles', theme: MISTAKE_PATTERN_PREFIX + main.pattern }) }
     : null
+  // Play it out: record the try once when the position is finished.
+  const practice = play.practice
+  const practiceSuccess = practice && play.status.over ? practiceSucceeded(practice.kind, play.status.winner, play.userColor) : null
+  const recordedFor = useRef<string | null>(null)
+  useEffect(() => {
+    if (!practice || practiceSuccess === null || !userMoved || recordedFor.current === play.uid) return
+    recordedFor.current = play.uid
+    void recordPracticeTry(practice.id, practiceSuccess)
+    void countPuzzleDone()
+  }, [practice, practiceSuccess, userMoved, play.uid])
+
   // Remember it, so the New game sheet starts from the new level too.
   useEffect(() => {
     if (adaptiveRating !== null) saveSettings({ ...loadSettings(), levelRating: adaptiveRating })
@@ -185,9 +216,43 @@ export function PlayScreen() {
     botNote: maiaNote,
     bookNote,
   }
-  const coach = askBlunder ? askMessage : coachMessage(coachInput)
+  // Play it out: an introduction before your first move, and the claim buttons when they apply.
+  const yourMoves = play.history.filter((m) => m.color === play.userColor).length
+  const lastJ = lastUserJudgement(userRatings)
+  const canClaim =
+    !!practice &&
+    !gameOver &&
+    !askBlunder &&
+    !!lastJ &&
+    (practice.kind === 'win'
+      ? lastJ.winAfter >= PLAY_IT_OUT.claimWinAt
+      : yourMoves >= PLAY_IT_OUT.holdMoves && lastJ.winAfter >= PLAY_IT_OUT.holdAtLeast)
+  const practiceIntro: CoachMessage | null =
+    practice && yourMoves === 0 && !gameOver
+      ? {
+          id: `practice:${practice.id}`,
+          tone: 'neutral',
+          title: practice.kind === 'win' ? 'Win this position' : 'Hold this position',
+          text:
+            practice.kind === 'win'
+              ? `You were winning here (${practice.evalText}) against ${practice.opponent} on ${formatDate(practice.gameDate)}, but the game slipped away. Finish the job: checkmate the bot.`
+              : `You were worse here (${practice.evalText}) against ${practice.opponent} on ${formatDate(practice.gameDate)}, but it could still be saved. Hold it: a draw or better counts.`,
+        }
+      : null
+  const withClaim = (m: CoachMessage): CoachMessage =>
+    canClaim && practice
+      ? {
+          ...m,
+          actions: [
+            practice.kind === 'win'
+              ? { label: 'Claim the win', primary: true, onClick: () => play.claim('win') }
+              : { label: 'Count it as held', primary: true, onClick: () => play.claim('held') },
+          ],
+        }
+      : m
+  const coach = askBlunder ? askMessage : (practiceIntro ?? withClaim(coachMessage(coachInput)))
   // Beside the board the hint card lists the hint steps, so the bubble keeps the move rating.
-  const coachBeside = askBlunder ? askMessage : coachMessage({ ...coachInput, hint: null, hintStep: 0 })
+  const coachBeside = askBlunder ? askMessage : (practiceIntro ?? withClaim(coachMessage({ ...coachInput, hint: null, hintStep: 0 })))
 
   return (
     <div className="play-screen">
@@ -226,6 +291,11 @@ export function PlayScreen() {
                 onReview={() => navigate({ name: 'review', id: play.uid })}
                 next={nextLevel}
                 mainMistake={mainMistake}
+                practice={
+                  practice && practiceSuccess !== null
+                    ? { success: practiceSuccess, kind: practice.kind, moreHref: routeHref({ name: 'puzzles', theme: MISTAKES_POSITIONS }) }
+                    : null
+                }
                 onRematch={() => {
                   play.rematch(nextLevel?.rating)
                   setFlipped(false)
@@ -240,6 +310,7 @@ export function PlayScreen() {
           kind="you"
           name="You"
           detail={[
+            practice ? (practice.kind === 'win' ? 'Win it' : 'Hold it') : '',
             statusText,
             play.takebacks > 0 ? `${play.takebacks} takeback${play.takebacks > 1 ? 's' : ''}` : '',
             play.blunderChecks > 0 ? `${play.blunderChecks} blunder check${play.blunderChecks > 1 ? 's' : ''}` : '',
@@ -305,11 +376,14 @@ export function PlayScreen() {
           onHint={nextHint}
         />
 
-        <OpeningPanel
-          info={openingInfo}
-          history={play.history}
-          movesFrom={prefs.liveCoaching && play.isUserTurn ? play.fen : null}
-        />
+        {/* Openings don't apply to a Play it out position. */}
+        {!practice && (
+          <OpeningPanel
+            info={openingInfo}
+            history={play.history}
+            movesFrom={prefs.liveCoaching && play.isUserTurn ? play.fen : null}
+          />
+        )}
 
         <section className="card moves-card desktop-only" aria-label="Moves">
           <h2 className="card-title">Moves</h2>
@@ -396,4 +470,13 @@ function resultText(status: Extract<GameStatus, { over: true }>, userColor: Colo
   const how = status.reason === 'checkmate' ? 'by checkmate' : `by ${status.reason}`
   if (status.winner === null) return `Draw ${how}`
   return status.winner === userColor ? `You won ${how}` : `You lost ${how}`
+}
+
+/** The rating of your latest rated move, if there is one. */
+function lastUserJudgement(ratings: PlyRating[]): Exclude<PlyRating, 'pending' | null> | null {
+  for (let i = ratings.length - 1; i >= 0; i--) {
+    const r = ratings[i]
+    if (r && r !== 'pending') return r
+  }
+  return null
 }

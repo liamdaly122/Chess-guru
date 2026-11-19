@@ -2,19 +2,11 @@
 
 By Liam Daly. A list of possible improvements, roughly in the order I'd consider them. Effort is a rough guide: small (an afternoon), medium (a day or two), large (several days).
 
-Done so far: human-like Maia-3 bots, installable app, puzzles from your own mistakes (with spaced repetition), backup to Files / iCloud Drive, the opening trainer, automatic Lichess import (with background reviews), the rating estimate, the adaptive bot, the daily goal with streaks, mistakes grouped by pattern, and a Chess.com-style game review (key moments, Retry, Follow-up and Explore, which cover the old "guess the move" and "try alternatives" ideas), and blunder check mode.
+Done so far: human-like Maia-3 bots, installable app, puzzles from your own mistakes (with spaced repetition), backup to Files / iCloud Drive, the opening trainer, automatic Lichess import (with background reviews), the rating estimate, the adaptive bot, the daily goal with streaks, mistakes grouped by pattern, and a Chess.com-style game review (key moments, Retry, Follow-up and Explore, which cover the old "guess the move" and "try alternatives" ideas), blunder check mode, and Play it out (win the won position, hold the bad position).
 
 ## Becoming a better player
 
-Ideas aimed at playing better, built on what the app already has (the engine, reviewed games and the coaching facts). None need a server or AI, and none can help in a live game elsewhere. Suggested order: win the won position (with hold the bad position), then endgame drills (under Training below).
-
-### Stop throwing games away
-
-**Win the won position** (small to medium)
-Positions from my games where I was clearly winning (say +3 or better) but didn't win. I play on from there against Stockfish until I convert. Practice aimed at exactly the chances I let slip.
-
-**Hold the bad position** (small, with the one above)
-The reverse: positions from my losses where I was worse but the game could still be saved, played on against the bot. Teaches finding the most stubborn defence.
+Ideas aimed at playing better, built on what the app already has (the engine, reviewed games and the coaching facts). None need a server or AI, and none can help in a live game elsewhere. Suggested order: endgame drills (under Training below), then short lessons for each mistake type.
 
 ### Think, don't just react
 

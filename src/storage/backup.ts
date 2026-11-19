@@ -5,6 +5,7 @@ import { listGames, saveGames } from './games'
 import { mistakesChanged } from './mistakeStore'
 import { drillsChanged } from './openingStore'
 import { loadGoalData, restoreGoalData, type GoalData } from '../goal/goalStore'
+import { getPracticeRecords, restorePracticeRecords, type PracticeRecords } from '../practice/practiceStore'
 import { getPuzzleRating, listAttempts, puzzlesChanged } from './puzzleStore'
 import type { GameRecord, PuzzleAttempt } from './types'
 
@@ -18,9 +19,10 @@ interface BackupFile {
   app: 'chess-guru'
   /**
    * 1: games only. 2: also puzzle rating, puzzle attempts and mistake puzzles. 3: also opening
-   * lines. 4: also the daily goal, puzzles done per day and the days the goal was met.
+   * lines. 4: also the daily goal, puzzles done per day and the days the goal was met. 5: also
+   * your Play it out tries.
    */
-  version: 1 | 2 | 3 | 4
+  version: 1 | 2 | 3 | 4 | 5
   exportedAt: number
   games: GameRecord[]
   puzzleRating?: number
@@ -28,13 +30,14 @@ interface BackupFile {
   mistakePuzzles?: MistakePuzzle[]
   openingDrills?: OpeningDrill[]
   goal?: Pick<GoalData, 'goal' | 'puzzleDays' | 'goalDays'>
+  practice?: PracticeRecords
 }
 
 export async function exportBackup(): Promise<string> {
   const db = await getDb()
   const file: BackupFile = {
     app: 'chess-guru',
-    version: 4,
+    version: 5,
     exportedAt: Date.now(),
     games: await listGames(),
     puzzleRating: await getPuzzleRating(),
@@ -42,6 +45,7 @@ export async function exportBackup(): Promise<string> {
     mistakePuzzles: await db.getAll('mistakePuzzles'),
     openingDrills: await db.getAll('openingDrills'),
     goal: await loadGoalData().then(({ goal, puzzleDays, goalDays }) => ({ goal, puzzleDays, goalDays })),
+    practice: await getPracticeRecords(),
   }
   return JSON.stringify(file)
 }
@@ -138,6 +142,12 @@ export async function importBackup(text: string): Promise<RestoreResult> {
       goalDays: okDays ? goal.goalDays : undefined,
       puzzleDays: okCounts ? goal.puzzleDays : undefined,
     })
+  }
+  if (data.practice && typeof data.practice === 'object') {
+    const ok = Object.entries(data.practice).filter(
+      ([id, r]) => typeof id === 'string' && r && typeof r.tries === 'number' && typeof r.successes === 'number' && typeof r.lastAt === 'number',
+    )
+    if (ok.length) await restorePracticeRecords(Object.fromEntries(ok))
   }
   return {
     restored: valid.length,

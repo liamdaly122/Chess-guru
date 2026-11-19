@@ -19,13 +19,67 @@ interface Props {
   next?: NextLevel | null
   /** The game's most common kind of mistake, with a link to practise it. */
   mainMistake?: { label: string; count: number; href: string } | null
+  /** Play it out: whether you did what the position asked, and where to find more. */
+  practice?: { success: boolean; kind: 'win' | 'hold'; moreHref: string } | null
 }
 
 /** Result card laid over the board when the game ends. */
-export function GameOverCard({ status, userColor, onReview, onRematch, onNewGame, onClose, next, mainMistake }: Props) {
+export function GameOverCard({ status, userColor, onReview, onRematch, onNewGame, onClose, next, mainMistake, practice }: Props) {
   const outcome = status.winner === null ? 'draw' : status.winner === userColor ? 'win' : 'loss'
-  const title = outcome === 'win' ? 'You won!' : outcome === 'loss' ? 'You lost' : 'Draw'
-  const reason = status.reason === 'checkmate' ? 'by checkmate' : `by ${status.reason}`
+  const title = practice
+    ? practice.success
+      ? practice.kind === 'win'
+        ? 'Converted!'
+        : 'Held!'
+      : 'Not this time'
+    : outcome === 'win'
+      ? 'You won!'
+      : outcome === 'loss'
+        ? 'You lost'
+        : 'Draw'
+  const reason =
+    status.reason === 'claim'
+      ? outcome === 'win'
+        ? 'win claimed'
+        : 'position held'
+      : status.reason === 'checkmate'
+        ? 'by checkmate'
+        : `by ${status.reason}`
+
+  if (practice) {
+    return (
+      <div className="game-over" role="dialog" aria-label="Position finished" data-testid="game-over">
+        <div className={`game-over-card outcome-${practice.success ? 'win' : 'loss'}`}>
+          <button type="button" className="icon-button game-over-close" aria-label="Close" onClick={onClose}>
+            <CloseIcon />
+          </button>
+          <p className="game-over-result">{status.result.replace('1/2', '½')}</p>
+          <h2>{title}</h2>
+          <p className="muted">
+            {reason}.{' '}
+            {practice.success
+              ? practice.kind === 'win'
+                ? 'You finished the job this time.'
+                : 'You saved it this time.'
+              : practice.kind === 'win'
+                ? 'The win slipped away again. Have another go.'
+                : 'It got away again. Have another go.'}
+          </p>
+          <button type="button" className="primary wide" onClick={onRematch}>
+            Try again
+          </button>
+          <div className="game-over-actions">
+            <a className="button-link" href={practice.moreHref}>
+              More positions
+            </a>
+            <button type="button" onClick={onNewGame}>
+              New game
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="game-over" role="dialog" aria-label="Game over" data-testid="game-over">
