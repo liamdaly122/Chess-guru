@@ -20,7 +20,7 @@ interface Props {
   /** The game's most common kind of mistake, with a link to practise it. */
   mainMistake?: { label: string; count: number; href: string } | null
   /** Play it out: whether you did what the position asked, and where to find more. */
-  practice?: { success: boolean; kind: 'win' | 'hold'; moreHref: string } | null
+  practice?: { success: boolean; kind: 'win' | 'hold' | 'mate'; moreHref: string; moreLabel: string } | null
 }
 
 /** Result card laid over the board when the game ends. */
@@ -28,9 +28,11 @@ export function GameOverCard({ status, userColor, onReview, onRematch, onNewGame
   const outcome = status.winner === null ? 'draw' : status.winner === userColor ? 'win' : 'loss'
   const title = practice
     ? practice.success
-      ? practice.kind === 'win'
-        ? 'Converted!'
-        : 'Held!'
+      ? practice.kind === 'mate'
+        ? 'Checkmate!'
+        : practice.kind === 'win'
+          ? 'Converted!'
+          : 'Held!'
       : 'Not this time'
     : outcome === 'win'
       ? 'You won!'
@@ -58,19 +60,19 @@ export function GameOverCard({ status, userColor, onReview, onRematch, onNewGame
           <p className="muted">
             {reason}.{' '}
             {practice.success
-              ? practice.kind === 'win'
-                ? 'You finished the job this time.'
-                : 'You saved it this time.'
-              : practice.kind === 'win'
-                ? 'The win slipped away again. Have another go.'
-                : 'It got away again. Have another go.'}
+              ? practice.kind === 'hold'
+                ? 'You saved it this time.'
+                : 'You finished the job this time.'
+              : practice.kind === 'hold'
+                ? 'It got away. Have another go.'
+                : 'The win slipped away. Have another go.'}
           </p>
           <button type="button" className="primary wide" onClick={onRematch}>
             Try again
           </button>
           <div className="game-over-actions">
             <a className="button-link" href={practice.moreHref}>
-              More positions
+              {practice.moreLabel}
             </a>
             <button type="button" onClick={onNewGame}>
               New game

@@ -23,7 +23,8 @@ import { useGames } from '../../storage/useGames'
 import { useMistakePuzzles } from '../../storage/useMistakePuzzles'
 import { todaysSet } from '../../puzzles/mistakes'
 import { MistakesPage } from './MistakeTrainer'
-import { isMistakesRoute, MISTAKES } from './mistakeRoutes'
+import { ENDGAMES, isMistakesRoute, MISTAKES } from './mistakeRoutes'
+import { EndgamesPage } from '../practice/EndgamesPage'
 import { GoalLine } from '../goal/GoalCard'
 import { drillStats } from '../../openings/drill'
 import { useOpeningDrills } from '../../storage/openingStore'
@@ -48,6 +49,7 @@ export function PuzzlesScreen({ theme }: { theme?: string }) {
   const openingCount = openingStats ? openingStats.due + openingStats.fresh : 0
   const mistakeMode = isMistakesRoute(theme)
   const openingMode = theme === OPENINGS || theme === OPENING_LINES
+  const endgameMode = theme === ENDGAMES
   const recommended = useMemo(() => recommendedThemes(games ? progressStats(games) : null), [games])
   const estimate = useMemo(() => (games ? ratingSummary(games).estimate : null), [games])
   // Before your first puzzle, start from your estimated playing rating.
@@ -64,7 +66,7 @@ export function PuzzlesScreen({ theme }: { theme?: string }) {
   const selected = theme && THEME_LABEL[theme] ? theme : MIXED
 
   const modeSwitch = (
-    <div className="mode-switch three" role="tablist" aria-label="Training">
+    <div className="mode-switch four" role="tablist" aria-label="Training">
       <a
         role="tab"
         aria-selected={mistakeMode}
@@ -76,8 +78,8 @@ export function PuzzlesScreen({ theme }: { theme?: string }) {
       </a>
       <a
         role="tab"
-        aria-selected={!mistakeMode && !openingMode}
-        className={!mistakeMode && !openingMode ? 'active' : ''}
+        aria-selected={!mistakeMode && !openingMode && !endgameMode}
+        className={!mistakeMode && !openingMode && !endgameMode ? 'active' : ''}
         href={routeHref({ name: 'puzzles' })}
       >
         Puzzles
@@ -91,8 +93,30 @@ export function PuzzlesScreen({ theme }: { theme?: string }) {
       >
         Openings{openingCount > 0 && <span className="count-pill">{openingCount}</span>}
       </a>
+      <a
+        role="tab"
+        aria-selected={endgameMode}
+        className={endgameMode ? 'active' : ''}
+        href={routeHref({ name: 'puzzles', theme: ENDGAMES })}
+        data-testid="mode-endgames"
+      >
+        Endgames
+      </a>
     </div>
   )
+
+  if (endgameMode) {
+    return (
+      <div className="puzzles-screen">
+        <div className="games-head">
+          <h1>Train</h1>
+        </div>
+        {modeSwitch}
+        <GoalLine />
+        <EndgamesPage />
+      </div>
+    )
+  }
 
   if (openingMode) {
     return (

@@ -16,6 +16,8 @@ export interface CoachMessage {
   text: string
   /** The "next time" tip, shown when the Tip button is tapped. */
   tip?: string
+  /** Label above the tip (default "Next time"). */
+  tipLabel?: string
   /** Evaluation after the move, White's point of view, e.g. "+0.4" or "-M2". */
   evalText?: string
   /** Which side the evaluation favours, for the chip's colour. */

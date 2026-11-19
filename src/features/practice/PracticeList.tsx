@@ -9,7 +9,7 @@ import { useGames } from '../../storage/useGames'
 import { CheckIcon } from '../../ui/icons'
 import { MISTAKES, MISTAKES_POSITIONS } from '../puzzles/mistakeRoutes'
 
-const KIND_LABEL = { win: 'Win it', hold: 'Hold it' } as const
+const KIND_LABEL = { win: 'Win it', hold: 'Hold it', mate: 'Mate it' } as const
 
 function usePositions(): PracticePosition[] | null {
   const games = useGames()

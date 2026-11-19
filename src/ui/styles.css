@@ -4112,3 +4112,60 @@ a.chip.active {
   margin-top: 8px;
   font-weight: 700;
 }
+
+/* ---------- Endgame drills ---------- */
+
+.mode-switch.four {
+  grid-template-columns: repeat(4, 1fr);
+  max-width: 560px;
+}
+
+.drill-row {
+  border-top: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+
+.drill-row:first-child {
+  border-top: none;
+}
+
+.drill-row .line-row {
+  border-top: none;
+  padding-bottom: 4px;
+}
+
+.drill-lesson summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.drill-lesson p {
+  margin: 6px 0 4px;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.endgames .practice-about {
+  margin: 0;
+}
+
+@media (max-width: 700px) {
+  .mode-switch.four {
+    gap: 2px;
+    padding: 3px;
+  }
+
+  .mode-switch.four a {
+    font-size: 0.8rem;
+    gap: 3px;
+    padding: 0 2px;
+  }
+
+  .mode-switch.four .count-pill {
+    min-width: 16px;
+    padding: 1px 4px;
+    font-size: 0.66rem;
+  }
+}

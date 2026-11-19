@@ -10,3 +10,6 @@ export function isMistakesRoute(theme: string | undefined): boolean {
 
 /** Play it out: positions from your games to win or hold. */
 export const MISTAKES_POSITIONS = 'mistakes-positions'
+
+/** Train: endgame drills. */
+export const ENDGAMES = 'endgames'

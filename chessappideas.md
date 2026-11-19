@@ -2,11 +2,11 @@
 
 By Liam Daly. A list of possible improvements, roughly in the order I'd consider them. Effort is a rough guide: small (an afternoon), medium (a day or two), large (several days).
 
-Done so far: human-like Maia-3 bots, installable app, puzzles from your own mistakes (with spaced repetition), backup to Files / iCloud Drive, the opening trainer, automatic Lichess import (with background reviews), the rating estimate, the adaptive bot, the daily goal with streaks, mistakes grouped by pattern, and a Chess.com-style game review (key moments, Retry, Follow-up and Explore, which cover the old "guess the move" and "try alternatives" ideas), blunder check mode, and Play it out (win the won position, hold the bad position).
+Done so far: human-like Maia-3 bots, installable app, puzzles from your own mistakes (with spaced repetition), backup to Files / iCloud Drive, the opening trainer, automatic Lichess import (with background reviews), the rating estimate, the adaptive bot, the daily goal with streaks, mistakes grouped by pattern, and a Chess.com-style game review (key moments, Retry, Follow-up and Explore, which cover the old "guess the move" and "try alternatives" ideas), blunder check mode, Play it out (win the won position, hold the bad position) and endgame drills.
 
 ## Becoming a better player
 
-Ideas aimed at playing better, built on what the app already has (the engine, reviewed games and the coaching facts). None need a server or AI, and none can help in a live game elsewhere. Suggested order: endgame drills (under Training below), then short lessons for each mistake type.
+Ideas aimed at playing better, built on what the app already has (the engine, reviewed games and the coaching facts). None need a server or AI, and none can help in a live game elsewhere. Suggested order: short lessons for each mistake type, then the opponent's threat quiz.
 
 ### Think, don't just react
 
@@ -32,11 +32,6 @@ A lesson for each of the 8 kinds of mistake the coach already finds (loose piece
 **Accounts and sync between devices** (medium)
 Use Supabase (free tier): sign in with a magic link sent by email, and games, reviews and puzzle history sync between phone and laptop. The app stays offline-first: everything is saved locally as now and synced in the background when online.
 Trade-offs: changes the original "no accounts or cloud database" rule; needs a Supabase project and its public key in the app (safe with row-level security); personal data then lives on a third-party server.
-
-## Training
-
-**Endgame drills** (small to medium)
-Classic endgames to practise against Stockfish from set positions: king and queen against king, king and rook against king, Lucena and Philidor positions, basic pawn endings.
 
 ## Progress and motivation
 

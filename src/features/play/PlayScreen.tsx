@@ -29,7 +29,7 @@ import { loadSettings, saveSettings, usePlayGame } from './usePlayGame'
 import { nextLevelRating } from '../../rating/adaptive'
 import { mainPattern, PATTERNS } from '../../puzzles/patterns'
 import { routeHref } from '../../app/route'
-import { MISTAKE_PATTERN_PREFIX, MISTAKES_POSITIONS } from '../puzzles/mistakeRoutes'
+import { ENDGAMES, MISTAKE_PATTERN_PREFIX, MISTAKES_POSITIONS } from '../puzzles/mistakeRoutes'
 import { findLevel } from '../../config/levels'
 import { usePreferences } from './usePreferences'
 import { AboutSection } from '../settings/AboutSection'
@@ -125,7 +125,11 @@ export function PlayScreen() {
   const otherSide = userSide === 'white' ? 'black' : 'white'
   const orientation = flipped ? otherSide : userSide
   const lastMove = play.history[play.history.length - 1]
-  const material = useMemo(() => materialSummary(play.game), [play.game])
+  // From a set position the "captured" pieces would be counted against a full army: show only the lead.
+  const material = useMemo(() => {
+    const m = materialSummary(play.game)
+    return play.startFen ? { w: { ...m.w, captured: [] }, b: { ...m.b, captured: [] } } : m
+  }, [play.game, play.startFen])
   const botColor = play.userColor === 'w' ? 'b' : 'w'
   const gameOver = play.status.over
   const showRatings = prefs.liveCoaching || gameOver
@@ -224,11 +228,21 @@ export function PlayScreen() {
     !gameOver &&
     !askBlunder &&
     !!lastJ &&
+    practice.kind !== 'mate' &&
     (practice.kind === 'win'
       ? lastJ.winAfter >= PLAY_IT_OUT.claimWinAt
       : yourMoves >= PLAY_IT_OUT.holdMoves && lastJ.winAfter >= PLAY_IT_OUT.holdAtLeast)
   const practiceIntro: CoachMessage | null =
-    practice && yourMoves === 0 && !gameOver
+    practice?.drill && yourMoves === 0 && !gameOver
+      ? {
+          id: `practice:${practice.id}:${practice.fen}`,
+          tone: 'neutral',
+          title: practice.drill.name,
+          text: `${practice.kind === 'mate' ? 'Checkmate the engine.' : practice.kind === 'win' ? 'Win against the engine.' : 'Hold the draw against the engine.'} It defends at full strength. Tap Tip for how it's done.`,
+          tip: practice.drill.lesson,
+          tipLabel: "How it's done",
+        }
+      : practice && yourMoves === 0 && !gameOver
       ? {
           id: `practice:${practice.id}`,
           tone: 'neutral',
@@ -293,7 +307,12 @@ export function PlayScreen() {
                 mainMistake={mainMistake}
                 practice={
                   practice && practiceSuccess !== null
-                    ? { success: practiceSuccess, kind: practice.kind, moreHref: routeHref({ name: 'puzzles', theme: MISTAKES_POSITIONS }) }
+                    ? {
+                        success: practiceSuccess,
+                        kind: practice.kind,
+                        moreHref: routeHref({ name: 'puzzles', theme: practice.drill ? ENDGAMES : MISTAKES_POSITIONS }),
+                        moreLabel: practice.drill ? 'More drills' : 'More positions',
+                      }
                     : null
                 }
                 onRematch={() => {
@@ -310,7 +329,7 @@ export function PlayScreen() {
           kind="you"
           name="You"
           detail={[
-            practice ? (practice.kind === 'win' ? 'Win it' : 'Hold it') : '',
+            practice ? (practice.drill ? practice.drill.name : practice.kind === 'win' ? 'Win it' : 'Hold it') : '',
             statusText,
             play.takebacks > 0 ? `${play.takebacks} takeback${play.takebacks > 1 ? 's' : ''}` : '',
             play.blunderChecks > 0 ? `${play.blunderChecks} blunder check${play.blunderChecks > 1 ? 's' : ''}` : '',

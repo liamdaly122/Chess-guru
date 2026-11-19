@@ -4,6 +4,7 @@ import { formatScore } from '../chess/score'
 import { suggestedLevel } from '../rating/estimate'
 import { opponentOf, outcomeOf } from '../storage/gameInfo'
 import type { GameRecord } from '../storage/types'
+import { drillRecordId, ENDGAME_LEVEL, sideToMove, type EndgameDrill } from './endgames'
 
 /**
  * Play it out: positions from your own reviewed games to play on against the bot.
@@ -12,7 +13,7 @@ import type { GameRecord } from '../storage/types'
  * From each game, the last such position (your move), so you start where it was still there to
  * win or save. Only positions from saved, finished games, so this can't help in a live game.
  */
-export type PracticeKind = 'win' | 'hold'
+export type PracticeKind = 'win' | 'hold' | 'mate'
 
 export interface PracticePosition {
   /** "<game id>:<half-move>:<kind>" */
@@ -32,6 +33,8 @@ export interface PracticePosition {
   gameDate: number
   /** Bot level to play against: the nearest to the opponent you faced. */
   levelRating: number
+  /** Set for an endgame drill (the game fields are then empty). */
+  drill?: { id: string; name: string; lesson: string }
 }
 
 /** Positions from one game (at most one of each kind). */
@@ -83,7 +86,27 @@ export function practicePositions(games: GameRecord[], fallbackRating?: number):
     .slice(0, PLAY_IT_OUT.maxPositions)
 }
 
-/** Did the result count? Win it: you won. Hold it: you didn't lose. */
+/** Did the result count? Win it or a mate drill: you won. Hold it: you didn't lose. */
 export function practiceSucceeded(kind: PracticeKind, winner: Color | null, userColor: Color): boolean {
-  return kind === 'win' ? winner === userColor : winner === null || winner === userColor
+  return kind === 'hold' ? winner === null || winner === userColor : winner === userColor
+}
+
+/** An endgame drill's position to play, taking the starting positions in turn. */
+export function drillPosition(drill: EndgameDrill, variant: number): PracticePosition {
+  const fen = drill.fens[((variant % drill.fens.length) + drill.fens.length) % drill.fens.length]
+  return {
+    id: drillRecordId(drill.id),
+    kind: drill.goal,
+    gameId: '',
+    ply: 0,
+    fen,
+    userColor: sideToMove(fen),
+    win: 0,
+    evalText: '',
+    played: '',
+    opponent: 'Stockfish',
+    gameDate: 0,
+    levelRating: ENDGAME_LEVEL,
+    drill: { id: drill.id, name: drill.name, lesson: drill.lesson },
+  }
 }

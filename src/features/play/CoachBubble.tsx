@@ -47,7 +47,7 @@ export function CoachBubble({ message }: { message: CoachMessage }) {
         <p className="coach-speech-text">{message.text}</p>
         {message.tip && showTip && (
           <p className="coach-speech-tip" data-testid="coach-tip">
-            <span className="tip-label">Next time</span>
+            <span className="tip-label">{message.tipLabel ?? 'Next time'}</span>
             {message.tip}
           </p>
         )}

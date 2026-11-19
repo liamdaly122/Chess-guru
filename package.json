@@ -17,7 +17,8 @@
     "build:puzzles": "node scripts/build-puzzles.mjs",
     "maia:strength": "node scripts/maia-strength.mjs",
     "ui:tour": "node scripts/ui-tour.cjs",
-    "build:icons": "node scripts/build-icons.cjs"
+    "build:icons": "node scripts/build-icons.cjs",
+    "check:endgames": "node scripts/check-endgames.mjs"
   },
   "dependencies": {
     "chess.js": "^1.4.0",
