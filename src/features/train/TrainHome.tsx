@@ -14,7 +14,9 @@ import { useGames } from '../../storage/useGames'
 import { useMistakePuzzles } from '../../storage/useMistakePuzzles'
 import { usePuzzleData } from '../../storage/usePuzzleData'
 import { trainPlan, type PlanItem } from '../../train/plan'
-import { BookIcon, CapIcon, CheckIcon, ChevronIcon, CrownIcon, FlagIcon, PuzzleIcon, RetryIcon } from '../../ui/icons'
+import { BookIcon, CapIcon, CheckIcon, ChevronIcon, CrownIcon, EyeIcon, FlagIcon, PuzzleIcon, RetryIcon } from '../../ui/icons'
+import { formatTime, useVisionRecords } from '../../vision/visionStore'
+import { VISION_SET } from '../../vision/drills'
 import { GoalLine } from '../goal/GoalCard'
 import {
   ENDGAMES,
@@ -25,6 +27,7 @@ import {
   OPENINGS,
   PLAY_IT_OUT_PAGE,
   PUZZLES,
+  VISION,
 } from './trainRoutes'
 
 const href = (page: string) => routeHref({ name: 'train', theme: page })
@@ -42,6 +45,10 @@ export function TrainHome() {
   const data = usePuzzleData()
   const lessonRecords = useLessonRecords()
   const practiceRecords = usePracticeRecords()
+  const visionRecords = useVisionRecords()
+  const visionBest = visionRecords
+    ? Object.values(visionRecords).sort((a, b) => b.best - a.best || a.bestMs - b.bestMs)[0]
+    : undefined
 
   const today = mistakes ? todaysSet(mistakes, now) : null
   const openings = drills ? drillStats(drills, now) : null
@@ -162,6 +169,17 @@ export function TrainHome() {
                 }
                 count={openingsDue}
                 testId="tile-openings"
+              />
+              <TrainRow
+                page={VISION}
+                icon={<EyeIcon />}
+                title="Board vision"
+                detail={
+                  visionBest
+                    ? `Best set: ${visionBest.best} of ${VISION_SET} in ${formatTime(visionBest.bestMs)}`
+                    : 'Spot loose pieces and checks faster'
+                }
+                testId="tile-vision"
               />
               <TrainRow
                 page={ENDGAMES}

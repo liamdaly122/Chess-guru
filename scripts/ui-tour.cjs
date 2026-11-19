@@ -52,6 +52,8 @@ async function tour(name, ctxOpts, browser) {
   await page.goto(BASE + '#/report'); await page.getByTestId('weekly-report').waitFor(); await shot('report', true);
   await page.goto(BASE + '#/train'); await page.getByTestId('train-plan').waitFor(); await shot('train', true);
   await page.goto(BASE + '#/train/puzzles'); await page.getByTestId('puzzle-card').waitFor(); await shot('puzzles', true);
+  await page.goto(BASE + '#/train/vision'); await page.getByTestId('vision-list').waitFor(); await shot('vision', true);
+  await page.goto(BASE + '#/train/vision-mixed'); await page.getByTestId('vision-question').waitFor(); await shot('vision-set', true);
   await page.goto(BASE + '#/train/lessons'); await page.getByTestId('lessons-card').waitFor(); await shot('lessons', true);
   await page.goto(BASE + '#/train/mistakes'); await page.getByTestId('mistake-patterns').waitFor(); await shot('mistakes', true);
   await page.getByTestId('start-today').click(); await page.getByTestId('mistake-card').waitFor(); await shot('mistake-session', true);

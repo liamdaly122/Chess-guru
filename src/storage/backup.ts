@@ -9,6 +9,7 @@ import { getPracticeRecords, restorePracticeRecords, type PracticeRecords } from
 import { getLessonRecords, restoreLessonRecords, type LessonRecords } from '../lessons/lessonStore'
 import { isLessonCategory } from '../lessons/lessons'
 import { getThreatResults, restoreThreatResults, type ThreatResult } from '../coach/threatQuizStore'
+import { getVisionRecords, restoreVisionRecords, type VisionRecords } from '../vision/visionStore'
 import { getPuzzleRating, listAttempts, puzzlesChanged } from './puzzleStore'
 import type { GameRecord, PuzzleAttempt } from './types'
 
@@ -23,9 +24,9 @@ interface BackupFile {
   /**
    * 1: games only. 2: also puzzle rating, puzzle attempts and mistake puzzles. 3: also opening
    * lines. 4: also the daily goal, puzzles done per day and the days the goal was met. 5: also
-   * your Play it out tries. 6: also lesson progress. 7: also threat quiz answers.
+   * your Play it out tries. 6: also lesson progress. 7: also threat quiz answers. 8: also board vision scores.
    */
-  version: 1 | 2 | 3 | 4 | 5 | 6 | 7
+  version: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8
   exportedAt: number
   games: GameRecord[]
   puzzleRating?: number
@@ -36,13 +37,14 @@ interface BackupFile {
   practice?: PracticeRecords
   lessons?: LessonRecords
   threatQuiz?: ThreatResult[]
+  vision?: VisionRecords
 }
 
 export async function exportBackup(): Promise<string> {
   const db = await getDb()
   const file: BackupFile = {
     app: 'chess-guru',
-    version: 7,
+    version: 8,
     exportedAt: Date.now(),
     games: await listGames(),
     puzzleRating: await getPuzzleRating(),
@@ -53,6 +55,7 @@ export async function exportBackup(): Promise<string> {
     practice: await getPracticeRecords(),
     lessons: await getLessonRecords(),
     threatQuiz: await getThreatResults(),
+    vision: await getVisionRecords(),
   }
   return JSON.stringify(file)
 }
@@ -167,6 +170,12 @@ export async function importBackup(text: string): Promise<RestoreResult> {
       (r) => r && typeof r.at === 'number' && (r.kind === 'threat' || r.kind === 'quiet') && ['right', 'close', 'wrong'].includes(r.verdict),
     )
     if (ok.length) await restoreThreatResults(ok)
+  }
+  if (data.vision && typeof data.vision === 'object') {
+    const ok = Object.entries(data.vision).filter(
+      ([d, r]) => (d === 'mixed' || ['loose', 'moves', 'checks', 'imagine'].includes(d)) && r && typeof r.sets === 'number' && typeof r.best === 'number' && typeof r.bestMs === 'number',
+    )
+    if (ok.length) await restoreVisionRecords(Object.fromEntries(ok))
   }
   return {
     restored: valid.length,

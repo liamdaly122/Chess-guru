@@ -4434,3 +4434,74 @@ a.chip.active {
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+/* ---------- Board vision ---------- */
+
+.vision-prompt {
+  align-items: flex-start;
+  font-size: 1rem;
+}
+
+.vision-prompt .side-chip {
+  flex: none;
+  margin-top: 4px;
+}
+
+.vision-moves {
+  display: block;
+  margin: 8px 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.count-buttons {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.count-buttons button {
+  min-height: 46px;
+  padding: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.vision-key {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+}
+
+.vision-key .key {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  margin-left: 6px;
+}
+
+.vision-key .key:first-child {
+  margin-left: 0;
+}
+
+.key-right {
+  background: rgba(76, 175, 80, 0.7);
+}
+
+.key-missed {
+  box-shadow: inset 0 0 0 3px rgba(240, 138, 36, 0.95);
+}
+
+.key-wrong {
+  background: rgba(226, 69, 60, 0.6);
+}
+
+.vision-progress {
+  margin: 10px 0 0;
+}

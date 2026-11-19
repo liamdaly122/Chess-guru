@@ -39,3 +39,7 @@ export function mistakesTitle(page: string): string {
   const pattern = page.startsWith(MISTAKE_PATTERN_PREFIX) ? page.slice(MISTAKE_PATTERN_PREFIX.length) : ''
   return isPattern(pattern) ? PATTERNS[pattern].label : 'Your mistakes'
 }
+
+/** Board vision drills: the list, and a set ("vision-loose", "vision-mixed"). */
+export const VISION = 'vision'
+export const VISION_PREFIX = 'vision-'

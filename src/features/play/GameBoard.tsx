@@ -28,6 +28,10 @@ interface Props {
   children?: ReactNode
   /** Must be unique when more than one board is on the page. */
   boardId?: string
+  /** Tap-to-mark mode (board vision drills): every tap is passed here and pieces can't be moved. */
+  onSquareTap?: (square: Square) => void
+  /** Extra styles for squares, e.g. marked answers. Drawn over the last-move highlight. */
+  squareMarks?: Partial<Record<Square, CSSProperties>>
 }
 
 const LAST_MOVE: CSSProperties = { backgroundColor: 'var(--last-move)' }
@@ -65,6 +69,8 @@ export function GameBoard({
   arrow,
   children,
   boardId = 'play-board',
+  onSquareTap,
+  squareMarks,
 }: Props) {
   const [selected, setSelected] = useState<Square | null>(null)
   const [pendingPromotion, setPendingPromotion] = useState<{ from: Square; to: Square } | null>(null)
@@ -100,6 +106,10 @@ export function GameBoard({
   }
 
   function handleSquareClick({ square }: SquareHandlerArgs) {
+    if (onSquareTap) {
+      onSquareTap(square as Square)
+      return
+    }
     if (!canMove) return
     const sq = square as Square
     if (selected && legalFromSelected.some((m) => m.to === sq)) {
@@ -126,6 +136,9 @@ export function GameBoard({
       const king = game.findPiece({ type: 'k', color: game.turn() })[0]
       if (king) styles[king] = { ...styles[king], ...CHECK }
     }
+    if (squareMarks) {
+      for (const [sq, style] of Object.entries(squareMarks)) styles[sq] = { ...styles[sq], ...style }
+    }
     if (selected) {
       styles[selected] = SELECTED
       for (const m of legalFromSelected) {
@@ -133,7 +146,7 @@ export function GameBoard({
       }
     }
     return styles
-  }, [game, lastMove, selected, legalFromSelected])
+  }, [game, lastMove, selected, legalFromSelected, squareMarks])
 
   const arrows = useMemo(
     () => (arrow ? [{ startSquare: arrow.from, endSquare: arrow.to, color: arrow.color ?? 'rgba(59, 130, 246, 0.85)' }] : []),
@@ -150,7 +163,7 @@ export function GameBoard({
           squareStyles,
           arrows,
           allowDrawingArrows: false,
-          allowDragging: canMove,
+          allowDragging: canMove && !onSquareTap,
           canDragPiece: ({ piece }) => canMove && piece.pieceType[0] === userColor,
           onPieceDrop: handleDrop,
           onSquareClick: handleSquareClick,

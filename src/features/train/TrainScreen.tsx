@@ -12,6 +12,9 @@ import { PracticePage } from '../practice/PracticeList'
 import { MistakesPage } from '../puzzles/MistakeTrainer'
 import { PuzzleRatingChip, PuzzlesPage } from '../puzzles/PuzzlesScreen'
 import { TrainHome } from './TrainHome'
+import { VisionList, VisionSession } from '../vision/VisionPage'
+import { drillTitle, VISION_TYPES } from '../../vision/drills'
+import type { VisionDrill } from '../../vision/visionStore'
 import {
   ENDGAMES,
   isMistakesRoute,
@@ -22,6 +25,8 @@ import {
   OPENING_LINES,
   OPENINGS,
   PLAY_IT_OUT_PAGE,
+  VISION,
+  VISION_PREFIX,
 } from './trainRoutes'
 
 const TRAIN = { label: 'Train', href: routeHref({ name: 'train' }) }
@@ -55,6 +60,21 @@ export function TrainScreen({ page }: { page?: string }) {
     )
   }
   if (page === OPENINGS || page === OPENING_LINES) return <OpeningsRoute page={page} />
+  if (page === VISION) {
+    return (
+      <TrainPage title="Board vision" back={TRAIN}>
+        <VisionList />
+      </TrainPage>
+    )
+  }
+  const drill = page.startsWith(VISION_PREFIX) ? page.slice(VISION_PREFIX.length) : ''
+  if (drill === 'mixed' || (VISION_TYPES as string[]).includes(drill)) {
+    return (
+      <TrainPage title={drillTitle(drill as VisionDrill)} back={{ label: 'Board vision', href: href(VISION) }}>
+        <VisionSession key={drill} drill={drill as VisionDrill} />
+      </TrainPage>
+    )
+  }
   return (
     <TrainPage title="Puzzles" back={TRAIN} right={<PuzzleRatingChip />}>
       <PuzzlesPage theme={page} />
