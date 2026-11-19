@@ -4,6 +4,7 @@ import { addDrills, listDrills } from './openingStore'
 import { countPuzzleDone, loadGoalData, setGoal } from '../goal/goalStore'
 import { getPracticeRecords, recordPracticeTry } from '../practice/practiceStore'
 import { getLessonRecords, recordLessonSet } from '../lessons/lessonStore'
+import { getThreatResults, recordThreatResult } from '../coach/threatQuizStore'
 import { IDBFactory } from 'fake-indexeddb'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { exportAllPgn, exportBackup, importBackup } from './backup'
@@ -149,6 +150,7 @@ describe('backup version 2', () => {
     await saveMistakePuzzle(p)
     await recordPracticeTry('g:14:win', true, 9)
     await recordLessonSet('forks', 4, 9)
+    await recordThreatResult({ at: 9, kind: 'threat', verdict: 'right' })
     await setGoal({ games: 2, puzzles: 10 })
     await countPuzzleDone(Date.now())
     await addDrills([newDrill({ id: 'e4 e5 Nf3', eco: 'C40', name: "King's Knight Opening", san: ['e4', 'e5', 'Nf3'] }, 'w', 5)])
@@ -165,6 +167,7 @@ describe('backup version 2', () => {
     expect(Object.values(goal.puzzleDays)).toEqual([1])
     expect((await getPracticeRecords())['g:14:win']).toMatchObject({ tries: 1, successes: 1 })
     expect((await getLessonRecords()).forks).toMatchObject({ sets: 1, best: 4 })
+    expect(await getThreatResults()).toEqual([{ at: 9, kind: 'threat', verdict: 'right' }])
     expect(await getPuzzleRating()).toBe(1216)
     expect((await listAttempts()).map((a) => a.id)).toEqual(['x:1'])
     const [restored] = await listMistakePuzzles()

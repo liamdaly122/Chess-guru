@@ -1,4 +1,4 @@
-import type { Chess, Color, Move, Square } from 'chess.js'
+import { Chess, type Color, type Move, type Square } from 'chess.js'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { latestEval, useGameAnalysis, type PlyRating } from '../../analysis/useGameAnalysis'
 import { describeStatus, type GameStatus } from '../../chess/gameStatus'
@@ -35,6 +35,9 @@ import { usePreferences } from './usePreferences'
 import { AboutSection } from '../settings/AboutSection'
 import { InstallSection } from '../settings/InstallSection'
 import { useSaveBotGame } from './useSaveBotGame'
+import { useThreatQuiz } from './useThreatQuiz'
+import { threatAnswerText } from '../../coach/threatQuiz'
+import { COLOR_NAME } from '../../patterns/board'
 import { useOpeningBook } from '../../openings/useOpeningBook'
 import { OpeningPanel } from '../openings/OpeningPanel'
 import { leftBookNote } from '../openings/leftBookNote'
@@ -98,6 +101,43 @@ export function PlayScreen() {
       },
     ],
   }
+  // Threat quiz: now and then, before your move, show what your opponent wants.
+  const yourMoves = play.history.filter((m) => m.color === play.userColor).length
+  const quiz = useThreatQuiz({
+    enabled: prefs.threatQuiz && prefs.liveCoaching && !play.practice && !play.status.over && play.engineReady && !askBlunder,
+    fen: play.fen,
+    isUserTurn: play.isUserTurn,
+    yourMoves,
+    gameKey: play.uid,
+  })
+  const quizBoard = useMemo(() => (quiz.asking ? new Chess(quiz.asking.nullFen) : null), [quiz.asking])
+  const quizMessage: CoachMessage | null = quiz.asking
+    ? {
+        id: `threat-quiz:${quiz.asking.fen}`,
+        tone: 'hint',
+        title: `What does ${COLOR_NAME[quiz.asking.opponent]} want?`,
+        text: `If it were ${COLOR_NAME[quiz.asking.opponent]}'s move again, what would they play? Move one of their pieces to show me.`,
+        actions: [
+          { label: 'No threat', onClick: () => quiz.answer('none') },
+          { label: 'Skip', onClick: () => quiz.skip() },
+        ],
+      }
+    : quiz.answered
+      ? {
+          id: `threat-answer:${quiz.answered.question.fen}`,
+          tone: quiz.answered.verdict === 'right' ? 'best' : quiz.answered.verdict === 'close' ? 'good' : 'warning',
+          ...threatAnswerText(quiz.answered.question, quiz.answered.verdict, quiz.answered.move),
+        }
+      : null
+  const threatArrow =
+    quiz.answered?.question.move != null
+      ? {
+          from: quiz.answered.question.move.slice(0, 2) as Square,
+          to: quiz.answered.question.move.slice(2, 4) as Square,
+          color: 'rgba(220, 38, 38, 0.85)',
+        }
+      : null
+
   const shouldHold = (waitingForRating && timedOutPly !== lastPly) || askBlunder
   if (shouldHold !== holdBot) setHoldBot(shouldHold) // derived state, updated during render
   const [flipped, setFlipped] = useState(false)
@@ -177,7 +217,7 @@ export function PlayScreen() {
   // Badge on the square your last move landed on, until your next move (hidden if the bot captured it).
   const badge = showRatings ? lastUserBadge(play.history, shownRatings, play.userColor, play.game) : null
 
-  const hint = prefs.hintMode && play.isUserTurn ? analysis.hint : null
+  const hint = prefs.hintMode && play.isUserTurn && !quiz.asking ? analysis.hint : null
   const glowSquare = hint && hintStep === 2 ? hint.pieceSquare : null
   const arrow = hint && hintStep >= 3 ? { from: hint.moveFrom, to: hint.moveTo } : null
 
@@ -190,6 +230,7 @@ export function PlayScreen() {
   const isMaia = play.level.engine.kind === 'maia'
   let statusText = describeStatus(play.status, play.userColor)
   if (askBlunder) statusText = 'Take it back, or play it anyway?'
+  else if (quiz.asking) statusText = 'Your move · first, what do they want?'
   else if (play.engineError) statusText = play.engineError
   else if (!play.engineReady) statusText = 'Loading engine…'
   else if (isMaia && play.maiaStatus.state === 'loading' && !play.isUserTurn && !play.status.over) {
@@ -221,7 +262,6 @@ export function PlayScreen() {
     bookNote,
   }
   // Play it out: an introduction before your first move, and the claim buttons when they apply.
-  const yourMoves = play.history.filter((m) => m.color === play.userColor).length
   const lastJ = lastUserJudgement(userRatings)
   const canClaim =
     !!practice &&
@@ -264,9 +304,11 @@ export function PlayScreen() {
           ],
         }
       : m
-  const coach = askBlunder ? askMessage : (practiceIntro ?? withClaim(coachMessage(coachInput)))
+  const coach = askBlunder ? askMessage : (practiceIntro ?? quizMessage ?? withClaim(coachMessage(coachInput)))
   // Beside the board the hint card lists the hint steps, so the bubble keeps the move rating.
-  const coachBeside = askBlunder ? askMessage : (practiceIntro ?? withClaim(coachMessage({ ...coachInput, hint: null, hintStep: 0 })))
+  const coachBeside = askBlunder
+    ? askMessage
+    : (practiceIntro ?? quizMessage ?? withClaim(coachMessage({ ...coachInput, hint: null, hintStep: 0 })))
 
   return (
     <div className="play-screen">
@@ -288,15 +330,22 @@ export function PlayScreen() {
         <div className="board-row">
           {prefs.showEval && <EvalBar score={evalScore} orientation={orientation} />}
           <GameBoard
-            game={play.game}
+            game={quizBoard ?? play.game}
             orientation={orientation}
-            userColor={play.userColor}
+            userColor={quiz.asking ? quiz.asking.opponent : play.userColor}
             canMove={play.engineReady && play.isUserTurn}
             lastMove={lastMove}
-            onMove={(m) => play.playUserMove(m, prefs.blunderCheck)}
+            onMove={(m) => {
+              // Threat quiz: the move shows your opponent's threat; the board then goes back to your turn.
+              if (quiz.asking) {
+                quiz.answer(m.from + m.to + (m.promotion ?? ''))
+                return false
+              }
+              return play.playUserMove(m, prefs.blunderCheck)
+            }}
             badge={badge}
             glowSquare={glowSquare}
-            arrow={arrow}
+            arrow={arrow ?? threatArrow}
           >
             {showGameOver && play.status.over && (
               <GameOverCard
@@ -365,7 +414,7 @@ export function PlayScreen() {
               type="button"
               className="action"
               onClick={nextHint}
-              disabled={!play.isUserTurn || !analysis.hint || hintStep >= 3}
+              disabled={!play.isUserTurn || !analysis.hint || hintStep >= 3 || !!quiz.asking}
             >
               <BulbIcon />
               <span>Hint</span>
@@ -388,7 +437,7 @@ export function PlayScreen() {
           notes={shownNotes}
           message={coachBeside}
           gameOver={gameOver}
-          hintMode={prefs.hintMode}
+          hintMode={prefs.hintMode && !quiz.asking}
           isUserTurn={play.isUserTurn}
           hint={analysis.hint}
           hintStep={hintStep}
@@ -452,6 +501,12 @@ export function PlayScreen() {
             description="If my move is a blunder, stop me once and ask if I'm sure, without saying why. Games with it on don't count towards my rating estimate."
             checked={prefs.blunderCheck}
             onChange={(v) => setPrefs({ blunderCheck: v })}
+          />
+          <Switch
+            label="Threat quiz"
+            description="Now and then, before my move, ask me what my opponent is threatening, then show the answer. Needs live coaching."
+            checked={prefs.threatQuiz}
+            onChange={(v) => setPrefs({ threatQuiz: v })}
           />
           <Switch
             label="Evaluation bar"

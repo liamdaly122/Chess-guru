@@ -17,6 +17,7 @@ import { LESSON_PREFIX } from '../puzzles/mistakeRoutes'
 import { GoalCard } from '../goal/GoalCard'
 import { queueReviews, useReviewQueue } from '../../review/reviewQueue'
 import { RATING } from '../../config/rating'
+import { threatScore, useThreatResults } from '../../coach/threatQuizStore'
 import { lichessRatings, puzzleStartRating, ratingSummary } from '../../rating/estimate'
 
 type Filter = 'all' | 'bot' | 'lichess'
@@ -43,6 +44,8 @@ export function ProgressScreen() {
   const openingInfo = drills ? drillStats(drills, now) : null
   const [filter, setFilter] = useState<Filter>('all')
   const queued = useReviewQueue()
+  const threatResults = useThreatResults()
+  const threats = threatResults && threatResults.length > 0 ? threatScore(threatResults) : null
 
   const filtered = useMemo(() => (games ?? []).filter((g) => filter === 'all' || g.source === filter), [games, filter])
   const stats = useMemo(() => progressStats(filtered), [filtered])
@@ -239,6 +242,12 @@ export function ProgressScreen() {
               ? `${openingInfo.due + openingInfo.fresh} to practise, ${openingInfo.mastered} mastered`
               : 'pick lines to learn by heart'}
           </a>
+          {threats && (
+            <p className="mistakes-link" data-testid="progress-threats">
+              <strong>Spotting threats:</strong> {threats.right} of the last {threats.asked} threat quiz{' '}
+              {threats.asked === 1 ? 'question' : 'questions'} right.
+            </p>
+          )}
           <div className="theme-chips">
             {themes.map((t) => (
               <a key={t} className="chip" href={routeHref({ name: 'puzzles', theme: t })}>

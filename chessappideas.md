@@ -2,16 +2,13 @@
 
 By Liam Daly. A list of possible improvements, roughly in the order I'd consider them. Effort is a rough guide: small (an afternoon), medium (a day or two), large (several days).
 
-Done so far: human-like Maia-3 bots, installable app, puzzles from your own mistakes (with spaced repetition), backup to Files / iCloud Drive, the opening trainer, automatic Lichess import (with background reviews), the rating estimate, the adaptive bot, the daily goal with streaks, mistakes grouped by pattern, and a Chess.com-style game review (key moments, Retry, Follow-up and Explore, which cover the old "guess the move" and "try alternatives" ideas), blunder check mode, Play it out (win the won position, hold the bad position), endgame drills and lessons for each mistake type.
+Done so far: human-like Maia-3 bots, installable app, puzzles from your own mistakes (with spaced repetition), backup to Files / iCloud Drive, the opening trainer, automatic Lichess import (with background reviews), the rating estimate, the adaptive bot, the daily goal with streaks, mistakes grouped by pattern, and a Chess.com-style game review (key moments, Retry, Follow-up and Explore, which cover the old "guess the move" and "try alternatives" ideas), blunder check mode, Play it out (win the won position, hold the bad position), endgame drills, lessons for each mistake type and the threat quiz ("What does my opponent want?").
 
 ## Becoming a better player
 
-Ideas aimed at playing better, built on what the app already has (the engine, reviewed games and the coaching facts). None need a server or AI, and none can help in a live game elsewhere. Suggested order: the opponent's threat quiz, then the weekly report.
+Ideas aimed at playing better, built on what the app already has (the engine, reviewed games and the coaching facts). None need a server or AI, and none can help in a live game elsewhere. Suggested order: the weekly report, then board vision drills.
 
 ### Think, don't just react
-
-**What does my opponent want?** (small)
-Now and then during a bot game the coach asks me to tap the square my opponent is threatening, then shows the answer. Uses the existing null-move threat analysis. Replaces the earlier "show the opponent's threat" idea.
 
 **Board vision drills** (small)
 Short exercises without moving pieces, for example "Which of your pieces are undefended?", "Tap every square the knight attacks" or "After these three moves, where is the bishop?". Trains what calculating needs.

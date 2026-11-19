@@ -8,6 +8,7 @@ import { loadGoalData, restoreGoalData, type GoalData } from '../goal/goalStore'
 import { getPracticeRecords, restorePracticeRecords, type PracticeRecords } from '../practice/practiceStore'
 import { getLessonRecords, restoreLessonRecords, type LessonRecords } from '../lessons/lessonStore'
 import { isLessonCategory } from '../lessons/lessons'
+import { getThreatResults, restoreThreatResults, type ThreatResult } from '../coach/threatQuizStore'
 import { getPuzzleRating, listAttempts, puzzlesChanged } from './puzzleStore'
 import type { GameRecord, PuzzleAttempt } from './types'
 
@@ -22,9 +23,9 @@ interface BackupFile {
   /**
    * 1: games only. 2: also puzzle rating, puzzle attempts and mistake puzzles. 3: also opening
    * lines. 4: also the daily goal, puzzles done per day and the days the goal was met. 5: also
-   * your Play it out tries. 6: also lesson progress.
+   * your Play it out tries. 6: also lesson progress. 7: also threat quiz answers.
    */
-  version: 1 | 2 | 3 | 4 | 5 | 6
+  version: 1 | 2 | 3 | 4 | 5 | 6 | 7
   exportedAt: number
   games: GameRecord[]
   puzzleRating?: number
@@ -34,13 +35,14 @@ interface BackupFile {
   goal?: Pick<GoalData, 'goal' | 'puzzleDays' | 'goalDays'>
   practice?: PracticeRecords
   lessons?: LessonRecords
+  threatQuiz?: ThreatResult[]
 }
 
 export async function exportBackup(): Promise<string> {
   const db = await getDb()
   const file: BackupFile = {
     app: 'chess-guru',
-    version: 6,
+    version: 7,
     exportedAt: Date.now(),
     games: await listGames(),
     puzzleRating: await getPuzzleRating(),
@@ -50,6 +52,7 @@ export async function exportBackup(): Promise<string> {
     goal: await loadGoalData().then(({ goal, puzzleDays, goalDays }) => ({ goal, puzzleDays, goalDays })),
     practice: await getPracticeRecords(),
     lessons: await getLessonRecords(),
+    threatQuiz: await getThreatResults(),
   }
   return JSON.stringify(file)
 }
@@ -158,6 +161,12 @@ export async function importBackup(text: string): Promise<RestoreResult> {
       ([c, r]) => isLessonCategory(c) && r && typeof r.sets === 'number' && typeof r.best === 'number',
     )
     if (ok.length) await restoreLessonRecords(Object.fromEntries(ok))
+  }
+  if (Array.isArray(data.threatQuiz)) {
+    const ok = data.threatQuiz.filter(
+      (r) => r && typeof r.at === 'number' && (r.kind === 'threat' || r.kind === 'quiet') && ['right', 'close', 'wrong'].includes(r.verdict),
+    )
+    if (ok.length) await restoreThreatResults(ok)
   }
   return {
     restored: valid.length,

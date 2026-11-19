@@ -9,10 +9,12 @@ export interface Preferences {
   hintMode: boolean
   /** Bot games: stop me once when my move is a blunder, without saying why. */
   blunderCheck: boolean
+  /** Bot games: now and then ask what my opponent is threatening before I move. */
+  threatQuiz: boolean
 }
 
 const KEY = 'chess-guru:preferences'
-const DEFAULTS: Preferences = { showEval: true, liveCoaching: true, hintMode: true, blunderCheck: false }
+const DEFAULTS: Preferences = { showEval: true, liveCoaching: true, hintMode: true, blunderCheck: false, threatQuiz: true }
 
 function load(): Preferences {
   try {
