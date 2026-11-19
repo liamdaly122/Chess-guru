@@ -2,11 +2,11 @@
 
 By Liam Daly. A list of possible improvements, roughly in the order I'd consider them. Effort is a rough guide: small (an afternoon), medium (a day or two), large (several days).
 
-Done so far: human-like Maia-3 bots, installable app, puzzles from your own mistakes (with spaced repetition), backup to Files / iCloud Drive, the opening trainer, automatic Lichess import (with background reviews), the rating estimate, the adaptive bot, the daily goal with streaks, mistakes grouped by pattern, and a Chess.com-style game review (key moments, Retry, Follow-up and Explore, which cover the old "guess the move" and "try alternatives" ideas), blunder check mode, Play it out (win the won position, hold the bad position) and endgame drills.
+Done so far: human-like Maia-3 bots, installable app, puzzles from your own mistakes (with spaced repetition), backup to Files / iCloud Drive, the opening trainer, automatic Lichess import (with background reviews), the rating estimate, the adaptive bot, the daily goal with streaks, mistakes grouped by pattern, and a Chess.com-style game review (key moments, Retry, Follow-up and Explore, which cover the old "guess the move" and "try alternatives" ideas), blunder check mode, Play it out (win the won position, hold the bad position), endgame drills and lessons for each mistake type.
 
 ## Becoming a better player
 
-Ideas aimed at playing better, built on what the app already has (the engine, reviewed games and the coaching facts). None need a server or AI, and none can help in a live game elsewhere. Suggested order: short lessons for each mistake type, then the opponent's threat quiz.
+Ideas aimed at playing better, built on what the app already has (the engine, reviewed games and the coaching facts). None need a server or AI, and none can help in a live game elsewhere. Suggested order: the opponent's threat quiz, then the weekly report.
 
 ### Think, don't just react
 
@@ -23,9 +23,6 @@ Once a week: accuracy trend, most common kind of mistake, weakest game phase, be
 
 **Opening report** (small)
 For each opening I play: games, score, how long I stay in book, and how the position looks at move 10. Shows which openings cost me points and links to the opening trainer.
-
-**Short lessons for each mistake type** (medium)
-A lesson for each of the 8 kinds of mistake the coach already finds (loose pieces, forks, pins and skewers, threats, king safety, missed tactics, missed mates, general): a few paragraphs, then 5 matching puzzles. Progress links to the lesson for my biggest weakness.
 
 ## Accounts and saving progress
 

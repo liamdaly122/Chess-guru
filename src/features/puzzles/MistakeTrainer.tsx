@@ -24,7 +24,9 @@ import { saveMistakePuzzle } from '../../storage/mistakeStore'
 import { BulbIcon, CheckIcon } from '../../ui/icons'
 import { GameBoard } from '../play/GameBoard'
 import { RatingBadge } from '../play/RatingBadge'
-import { MISTAKE_PATTERN_PREFIX, MISTAKES, MISTAKES_MORE, MISTAKES_POSITIONS, MISTAKES_TODAY } from './mistakeRoutes'
+import { LESSON_PREFIX, LESSONS_ROUTE, MISTAKE_PATTERN_PREFIX, MISTAKES, MISTAKES_MORE, MISTAKES_POSITIONS, MISTAKES_TODAY } from './mistakeRoutes'
+import { LessonPage, LessonsList, LessonsPage } from '../lessons/LessonPage'
+import { isLessonCategory } from '../../lessons/lessons'
 import { PracticeCard, PracticePage } from '../practice/PracticeList'
 
 const href = (theme: string) => routeHref({ name: 'puzzles', theme })
@@ -33,6 +35,11 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
 /** Your mistakes: today's set, your most common mistakes, or a session solving them. */
 export function MistakesPage({ puzzles, theme }: { puzzles: MistakePuzzle[]; theme: string }) {
   if (theme === MISTAKES_POSITIONS) return <PracticePage />
+  if (theme === LESSONS_ROUTE) return <LessonsPage />
+  if (theme.startsWith(LESSON_PREFIX)) {
+    const c = theme.slice(LESSON_PREFIX.length)
+    if (isLessonCategory(c)) return <LessonPage key={c} category={c} mistakes={puzzles} />
+  }
   if (puzzles.length === 0) {
     return (
       <div className="mistakes-home">
@@ -45,6 +52,7 @@ export function MistakesPage({ puzzles, theme }: { puzzles: MistakePuzzle[]; the
           Play a game or review one from the Games page.
         </p>
       </div>
+      <LessonsList max={3} />
       <PracticeCard />
       </div>
     )
@@ -124,6 +132,7 @@ function MistakesHome({ puzzles }: { puzzles: MistakePuzzle[] }) {
         )}
       </section>
 
+      <LessonsList max={3} />
       <PracticeCard />
     </div>
   )

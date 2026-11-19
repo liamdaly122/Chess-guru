@@ -203,11 +203,15 @@ interface TrainerProps {
   themes: string[]
   rating: number
   done: Set<string>
+  /** A fixed-size set (for lessons): after this many puzzles, `onSetDone` instead of the next one. */
+  limit?: number
+  onSetDone?: (solvedFirstTime: number, total: number) => void
 }
 
 type Feedback = { kind: 'wrong' | 'correct' | 'solved' | 'revealed'; text: string } | null
 
-function Trainer({ puzzles, themes, rating, done }: TrainerProps) {
+export function Trainer({ puzzles, themes, rating, done, limit, onSetDone }: TrainerProps) {
+  const [finished, setFinished] = useState<boolean[]>([])
   const pick = (exclude: Set<string>) => selectPuzzle(puzzles, { rating, themes, exclude })
   const [state, setState] = useState<PuzzleState | null>(() => {
     const p = pick(done)
@@ -235,6 +239,7 @@ function Trainer({ puzzles, themes, rating, done }: TrainerProps) {
     const solved = s.wrong === 0 && !helped
     const after = updatePuzzleRating(rating, s.puzzle.rating, solved)
     setResult({ solved, change: after - rating })
+    setFinished((f) => [...f, solved])
     void countPuzzleDone()
     await recordAttempt({
       id: `${s.puzzle.id}:${Date.now()}`,
@@ -291,6 +296,10 @@ function Trainer({ puzzles, themes, rating, done }: TrainerProps) {
 
   function nextPuzzle() {
     if (!state) return
+    if (limit && finished.length >= limit) {
+      onSetDone?.(finished.filter(Boolean).length, finished.length)
+      return
+    }
     seen.current.add(state.puzzle.id)
     const p = pick(seen.current)
     setState(p ? startPuzzle(p) : null)
@@ -328,6 +337,11 @@ function Trainer({ puzzles, themes, rating, done }: TrainerProps) {
       </section>
       <aside className="side-area">
         <section className="card puzzle-card" data-testid="puzzle-card" data-puzzle-id={state.puzzle.id}>
+          {limit && (
+            <p className="muted small set-progress" data-testid="set-progress">
+              Puzzle {Math.min(limit, finished.length + (state.status === 'solved' ? 0 : 1))} of {limit}
+            </p>
+          )}
           {!feedback && <p className="muted">Play the move you think is best. Tap Hint if you are stuck.</p>}
           {feedback && (
             <p className={`puzzle-feedback fb-${feedback.kind}`} role="status" data-testid="puzzle-feedback">
@@ -363,7 +377,7 @@ function Trainer({ puzzles, themes, rating, done }: TrainerProps) {
               </>
             ) : (
               <button type="button" className="primary wide" onClick={nextPuzzle}>
-                Next puzzle
+                {limit && finished.length >= limit ? 'Finish' : 'Next puzzle'}
               </button>
             )}
           </div>

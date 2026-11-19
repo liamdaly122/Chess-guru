@@ -12,6 +12,8 @@ import { patternStats, todaysSet } from '../../puzzles/mistakes'
 import { drillStats } from '../../openings/drill'
 import { useOpeningDrills } from '../../storage/openingStore'
 import { AccuracyChart } from './AccuracyChart'
+import { LESSONS } from '../../lessons/lessons'
+import { LESSON_PREFIX } from '../puzzles/mistakeRoutes'
 import { GoalCard } from '../goal/GoalCard'
 import { queueReviews, useReviewQueue } from '../../review/reviewQueue'
 import { RATING } from '../../config/rating'
@@ -202,6 +204,7 @@ export function ProgressScreen() {
                   <span className="bar-value">{Math.round(p.winLost)}%</span>
                   <span className="bar-sub muted">
                     {p.count} time{p.count === 1 ? '' : 's'} ·{' '}
+                    <a href={routeHref({ name: 'puzzles', theme: LESSON_PREFIX + p.category })}>lesson</a> ·{' '}
                     <a href={routeHref({ name: 'puzzles', theme: CATEGORY_THEMES[p.category][0] })}>
                       practise {THEME_LABEL[CATEGORY_THEMES[p.category][0]].toLowerCase()}
                     </a>
@@ -214,6 +217,15 @@ export function ProgressScreen() {
 
         <section className="card" aria-label="Puzzles">
           <h2 className="card-title">Practise your weak spots</h2>
+          {stats.patterns[0] && (
+            <a
+              className="mistakes-link"
+              href={routeHref({ name: 'puzzles', theme: LESSON_PREFIX + stats.patterns[0].category })}
+              data-testid="progress-lesson"
+            >
+              <strong>Lesson for your costliest mistake:</strong> {LESSONS[stats.patterns[0].category].title.toLowerCase()}
+            </a>
+          )}
           {mistakeInfo && (
             <a className="mistakes-link" href={routeHref({ name: 'puzzles', theme: 'mistakes' })} data-testid="progress-mistakes">
               <strong>Your most common mistake:</strong> {mistakeInfo.top.label.toLowerCase()} (

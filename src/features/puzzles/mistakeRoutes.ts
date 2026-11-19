@@ -13,3 +13,7 @@ export const MISTAKES_POSITIONS = 'mistakes-positions'
 
 /** Train: endgame drills. */
 export const ENDGAMES = 'endgames'
+
+/** Lessons: the list, and one lesson ("mistakes-lesson-forks"). */
+export const LESSONS_ROUTE = 'mistakes-lessons'
+export const LESSON_PREFIX = 'mistakes-lesson-'

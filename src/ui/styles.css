@@ -4169,3 +4169,76 @@ a.chip.active {
     font-size: 0.66rem;
   }
 }
+
+/* ---------- Lessons ---------- */
+
+.lesson-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lesson-card p {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.lesson-title-h {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.lesson-card .card-title {
+  margin: 8px 0 0;
+}
+
+.lesson-points {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  line-height: 1.5;
+}
+
+.lesson-example,
+.lesson-practise {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lesson-example p,
+.lesson-practise p {
+  margin: 0;
+}
+
+.lesson-board {
+  width: 100%;
+  max-width: 420px;
+  align-self: center;
+}
+
+.puzzle-actions button.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.lesson-link {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.set-progress {
+  margin: 0;
+  font-weight: 700;
+}
+
+/* Row buttons (Solve, Open, Play) all the same size. */
+.line-row .solve-button {
+  flex: none;
+  min-height: 40px;
+  padding: 6px 14px;
+  font-size: 0.9rem;
+}
