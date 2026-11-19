@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 
 /**
- * Tiny hash-based router: #/ (play), #/games, #/review/<id>, #/progress, #/puzzles[/<theme>].
+ * Tiny hash-based router: #/ (play), #/games, #/review/<id>, #/progress, #/train[/<page>].
+ * Old #/puzzles links still open Train.
  * Hash URLs work on any static host (Vercel) and in an iPhone app wrapper, with no server config.
  */
 export type Route =
@@ -9,15 +10,15 @@ export type Route =
   | { name: 'games' }
   | { name: 'review'; id: string }
   | { name: 'progress' }
-  | { name: 'puzzles'; theme?: string }
+  | { name: 'train'; theme?: string }
 
 export function parseHash(hash: string): Route {
   const path = hash.replace(/^#\/?/, '')
   if (path === 'games') return { name: 'games' }
   if (path === 'progress') return { name: 'progress' }
-  if (path === 'puzzles') return { name: 'puzzles' }
-  const puzzles = path.match(/^puzzles\/([A-Za-z0-9-]+)$/)
-  if (puzzles) return { name: 'puzzles', theme: puzzles[1] }
+  if (path === 'train' || path === 'puzzles') return { name: 'train' }
+  const train = path.match(/^(?:train|puzzles)\/([A-Za-z0-9-]+)$/)
+  if (train) return { name: 'train', theme: train[1] }
   const review = path.match(/^review\/(.+)$/)
   if (review) return { name: 'review', id: decodeURIComponent(review[1]) }
   return { name: 'play' }
@@ -33,8 +34,8 @@ export function routeHref(route: Route): string {
       return `#/review/${encodeURIComponent(route.id)}`
     case 'progress':
       return '#/progress'
-    case 'puzzles':
-      return route.theme ? `#/puzzles/${route.theme}` : '#/puzzles'
+    case 'train':
+      return route.theme ? `#/train/${route.theme}` : '#/train'
   }
 }
 

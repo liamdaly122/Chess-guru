@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { routeHref } from '../../app/route'
 import { practicePositions, type PracticePosition } from '../../practice/positions'
 import { usePracticeRecords, type PracticeRecord } from '../../practice/practiceStore'
 import { requestPractice } from '../../practice/startRequest'
@@ -7,7 +6,6 @@ import { ratingSummary } from '../../rating/estimate'
 import { formatDate } from '../../storage/gameInfo'
 import { useGames } from '../../storage/useGames'
 import { CheckIcon } from '../../ui/icons'
-import { MISTAKES, MISTAKES_POSITIONS } from '../puzzles/mistakeRoutes'
 
 const KIND_LABEL = { win: 'Win it', hold: 'Hold it', mate: 'Mate it' } as const
 
@@ -54,42 +52,14 @@ export function PracticeRow({ position: p, record }: { position: PracticePositio
 const ABOUT =
   'Positions from your games where you were winning and let it slip ("Win it"), or were worse but could have saved it ("Hold it"). Play them out against the bot.'
 
-/** A card for the Mistakes page: the newest few positions, untried first. */
-export function PracticeCard() {
-  const positions = usePositions()
-  const records = usePracticeRecords()
-  if (!positions || !records || positions.length === 0) return null
-  const shown = [...positions].sort((a, b) => Number(!!records[a.id]) - Number(!!records[b.id])).slice(0, 3)
-  return (
-    <section className="card practice-card" aria-label="Play it out" data-testid="practice-card">
-      <h2 className="card-title">Play it out</h2>
-      <p className="muted small practice-about">{ABOUT}</p>
-      <ul className="line-list">
-        {shown.map((p) => (
-          <PracticeRow key={p.id} position={p} record={records[p.id]} />
-        ))}
-      </ul>
-      {positions.length > shown.length && (
-        <a className="small see-all" href={routeHref({ name: 'puzzles', theme: MISTAKES_POSITIONS })}>
-          See all {positions.length}
-        </a>
-      )}
-    </section>
-  )
-}
-
 /** All positions, newest games first. */
 export function PracticePage() {
   const positions = usePositions()
   const records = usePracticeRecords()
   return (
     <div className="mistakes-home">
-      <a className="back-link small" href={routeHref({ name: 'puzzles', theme: MISTAKES })}>
-        ← Your mistakes
-      </a>
+      <p className="muted small practice-about">{ABOUT}</p>
       <section className="card" aria-label="Play it out" data-testid="practice-page">
-        <h2 className="card-title">Play it out</h2>
-        <p className="muted small practice-about">{ABOUT}</p>
         {!positions || !records ? (
           <p className="muted">Loading…</p>
         ) : positions.length === 0 ? (

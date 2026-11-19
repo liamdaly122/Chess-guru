@@ -1,6 +1,7 @@
 import { Chess, type Move, type Square } from 'chess.js'
 import { useEffect, useRef, useState } from 'react'
 import { routeHref } from '../../app/route'
+import { OPENING_LINES } from '../train/trainRoutes'
 import { parseUci, type MoveInput } from '../../chess/moves'
 import { OPENING_TRAINER } from '../../config/openingTrainer'
 import { loadBook, type BookData } from '../../openings/book'
@@ -29,8 +30,6 @@ import { GameBoard } from '../play/GameBoard'
 import { MoveStrip } from '../play/MoveStrip'
 
 /** Route theme for the opening trainer, and for its list of lines. */
-export const OPENINGS = 'openings'
-export const OPENING_LINES = 'openings-lines'
 
 const SIDE = { w: 'White', b: 'Black' } as const
 const ARROW = 'rgba(76, 175, 80, 0.85)'
@@ -64,7 +63,7 @@ export function OpeningTrainer({ drills }: { drills: OpeningDrill[] }) {
   const current = drills.find((d) => d.id === (currentId ?? queue[0]?.id)) ?? null
   const stats = drillStats(drills, now)
   const linesLink = (
-    <a className="small" href={routeHref({ name: 'puzzles', theme: OPENING_LINES })} data-testid="opening-lines-link">
+    <a className="small" href={routeHref({ name: 'train', theme: OPENING_LINES })} data-testid="opening-lines-link">
       Your lines ({drills.length}) · add more
     </a>
   )
@@ -91,7 +90,7 @@ export function OpeningTrainer({ drills }: { drills: OpeningDrill[] }) {
               Practise anyway
             </button>
           )}
-          <a className="button-link" href={routeHref({ name: 'puzzles', theme: OPENING_LINES })}>
+          <a className="button-link" href={routeHref({ name: 'train', theme: OPENING_LINES })}>
             Add lines
           </a>
         </div>

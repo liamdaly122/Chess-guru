@@ -141,3 +141,35 @@ export const FlameIcon = (p: IconProps) => (
     <path d="M12 22c4 0 7-2.7 7-6.6 0-2.8-1.5-5.1-3.4-7-.3 1.6-1.2 2.9-2.4 3.4.4-3.6-1.2-7.2-4.2-9.3.2 3.1-1.5 5.5-3.3 7.6C4.6 11.4 5 12.8 5 15.4 5 19.3 8 22 12 22Z" />
   </Icon>
 )
+
+export const RetryIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M3 12a9 9 0 1 0 3-6.7" />
+    <path d="M3 4v5h5" />
+  </Icon>
+)
+
+export const PuzzleIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M5 8h3a2 2 0 1 1 4 0h3v3a2 2 0 1 1 0 4v4h-4a2 2 0 1 0-4 0H5v-4a2 2 0 1 0 0-4V8Z" />
+  </Icon>
+)
+
+export const FlagIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M5 21V4" />
+    <path d="M5 4h11l-2 4 2 4H5" />
+  </Icon>
+)
+
+export const CrownIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="m3 8 4 4 5-7 5 7 4-4-2 11H5L3 8Z" />
+  </Icon>
+)
+
+export const ChevronIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="m9 6 6 6-6 6" />
+  </Icon>
+)

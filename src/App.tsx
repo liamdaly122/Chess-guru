@@ -3,7 +3,7 @@ import { routeHref, useRoute, type Route } from './app/route'
 import { GamesScreen } from './features/games/GamesScreen'
 import { PlayScreen } from './features/play/PlayScreen'
 import { ProgressScreen } from './features/progress/ProgressScreen'
-import { PuzzlesScreen } from './features/puzzles/PuzzlesScreen'
+import { TrainScreen } from './features/train/TrainScreen'
 import { ReviewScreen } from './features/review/ReviewScreen'
 import { BoardIcon, ChartIcon, ListIcon, TargetIcon } from './ui/icons'
 import { UpdateBanner } from './features/settings/UpdateBanner'
@@ -19,7 +19,7 @@ const TABS: { route: Route; label: string; icon: typeof BoardIcon }[] = [
   { route: { name: 'play' }, label: 'Play', icon: BoardIcon },
   { route: { name: 'games' }, label: 'Games', icon: ListIcon },
   { route: { name: 'progress' }, label: 'Progress', icon: ChartIcon },
-  { route: { name: 'puzzles' }, label: 'Train', icon: TargetIcon },
+  { route: { name: 'train' }, label: 'Train', icon: TargetIcon },
 ]
 
 export default function App() {
@@ -68,7 +68,7 @@ export default function App() {
             {route.name === 'games' && <GamesScreen />}
             {route.name === 'review' && <ReviewScreen id={route.id} />}
             {route.name === 'progress' && <ProgressScreen />}
-            {route.name === 'puzzles' && <PuzzlesScreen theme={route.theme} />}
+            {route.name === 'train' && <TrainScreen page={route.theme} />}
           </ErrorBoundary>
         )}
       </main>

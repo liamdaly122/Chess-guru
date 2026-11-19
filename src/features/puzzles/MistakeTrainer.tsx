@@ -24,25 +24,15 @@ import { saveMistakePuzzle } from '../../storage/mistakeStore'
 import { BulbIcon, CheckIcon } from '../../ui/icons'
 import { GameBoard } from '../play/GameBoard'
 import { RatingBadge } from '../play/RatingBadge'
-import { LESSON_PREFIX, LESSONS_ROUTE, MISTAKE_PATTERN_PREFIX, MISTAKES, MISTAKES_MORE, MISTAKES_POSITIONS, MISTAKES_TODAY } from './mistakeRoutes'
-import { LessonPage, LessonsList, LessonsPage } from '../lessons/LessonPage'
-import { isLessonCategory } from '../../lessons/lessons'
-import { PracticeCard, PracticePage } from '../practice/PracticeList'
+import { MISTAKE_PATTERN_PREFIX, MISTAKES, MISTAKES_MORE, MISTAKES_TODAY } from '../train/trainRoutes'
 
-const href = (theme: string) => routeHref({ name: 'puzzles', theme })
+const href = (theme: string) => routeHref({ name: 'train', theme })
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
 
 /** Your mistakes: today's set, your most common mistakes, or a session solving them. */
 export function MistakesPage({ puzzles, theme }: { puzzles: MistakePuzzle[]; theme: string }) {
-  if (theme === MISTAKES_POSITIONS) return <PracticePage />
-  if (theme === LESSONS_ROUTE) return <LessonsPage />
-  if (theme.startsWith(LESSON_PREFIX)) {
-    const c = theme.slice(LESSON_PREFIX.length)
-    if (isLessonCategory(c)) return <LessonPage key={c} category={c} mistakes={puzzles} />
-  }
   if (puzzles.length === 0) {
     return (
-      <div className="mistakes-home">
       <div className="card empty-state" data-testid="mistakes-empty">
         <p>
           <strong>No mistakes to practise yet.</strong>
@@ -51,9 +41,6 @@ export function MistakesPage({ puzzles, theme }: { puzzles: MistakePuzzle[]; the
           When a reviewed game has mistakes that cost you, the positions appear here, grouped by the kind of mistake.
           Play a game or review one from the Games page.
         </p>
-      </div>
-      <LessonsList max={3} />
-      <PracticeCard />
       </div>
     )
   }
@@ -131,9 +118,6 @@ function MistakesHome({ puzzles }: { puzzles: MistakePuzzle[] }) {
           </button>
         )}
       </section>
-
-      <LessonsList max={3} />
-      <PracticeCard />
     </div>
   )
 }
@@ -150,16 +134,9 @@ function MistakeSession({ puzzles, kind }: { puzzles: MistakePuzzle[]; kind: str
   const pattern = isPattern(kind) ? PATTERNS[kind] : null
   const title = pattern ? pattern.label : kind === MISTAKES_TODAY ? "Today's mistakes" : 'More of your mistakes'
   const current = puzzles.find((p) => p.id === ids[results.length])
-  const back = (
-    <a className="back-link small" href={href(MISTAKES)}>
-      ← Your mistakes
-    </a>
-  )
-
   if (ids.length === 0) {
     return (
       <div className="card empty-state">
-        {back}
         <p>
           <strong>Nothing to solve here right now.</strong>
         </p>
@@ -191,12 +168,9 @@ function MistakeSession({ puzzles, kind }: { puzzles: MistakePuzzle[]; kind: str
 
   return (
     <>
-      <div className="trainer-bar">
-        {back}
-        <p className="muted small" data-testid="session-progress">
-          {title} · {results.length + 1} of {ids.length}
-        </p>
-      </div>
+      <p className="muted small session-progress" data-testid="session-progress">
+        Position {results.length + 1} of {ids.length}
+      </p>
       <MistakePuzzleView key={current.id} puzzle={current} onNext={(r) => setResults((rs) => [...rs, r])} />
     </>
   )

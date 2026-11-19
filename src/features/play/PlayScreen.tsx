@@ -29,7 +29,7 @@ import { loadSettings, saveSettings, usePlayGame } from './usePlayGame'
 import { nextLevelRating } from '../../rating/adaptive'
 import { mainPattern, PATTERNS } from '../../puzzles/patterns'
 import { routeHref } from '../../app/route'
-import { ENDGAMES, MISTAKE_PATTERN_PREFIX, MISTAKES_POSITIONS } from '../puzzles/mistakeRoutes'
+import { ENDGAMES, MISTAKE_PATTERN_PREFIX, PLAY_IT_OUT_PAGE } from '../train/trainRoutes'
 import { findLevel } from '../../config/levels'
 import { usePreferences } from './usePreferences'
 import { AboutSection } from '../settings/AboutSection'
@@ -196,7 +196,7 @@ export function PlayScreen() {
         }
   const main = play.status.over && !play.practice ? mainPattern(userNotes) : null
   const mainMistake = main
-    ? { label: PATTERNS[main.pattern].label, count: main.count, href: routeHref({ name: 'puzzles', theme: MISTAKE_PATTERN_PREFIX + main.pattern }) }
+    ? { label: PATTERNS[main.pattern].label, count: main.count, href: routeHref({ name: 'train', theme: MISTAKE_PATTERN_PREFIX + main.pattern }) }
     : null
   // Play it out: record the try once when the position is finished.
   const practice = play.practice
@@ -359,7 +359,7 @@ export function PlayScreen() {
                     ? {
                         success: practiceSuccess,
                         kind: practice.kind,
-                        moreHref: routeHref({ name: 'puzzles', theme: practice.drill ? ENDGAMES : MISTAKES_POSITIONS }),
+                        moreHref: routeHref({ name: 'train', theme: practice.drill ? ENDGAMES : PLAY_IT_OUT_PAGE }),
                         moreLabel: practice.drill ? 'More drills' : 'More positions',
                       }
                     : null

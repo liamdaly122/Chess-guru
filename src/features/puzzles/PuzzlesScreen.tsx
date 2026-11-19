@@ -20,36 +20,18 @@ import { recordAttempt } from '../../storage/puzzleStore'
 import { countPuzzleDone } from '../../goal/goalStore'
 import { usePuzzleData } from '../../storage/usePuzzleData'
 import { useGames } from '../../storage/useGames'
-import { useMistakePuzzles } from '../../storage/useMistakePuzzles'
-import { todaysSet } from '../../puzzles/mistakes'
-import { MistakesPage } from './MistakeTrainer'
-import { ENDGAMES, isMistakesRoute, MISTAKES } from './mistakeRoutes'
-import { EndgamesPage } from '../practice/EndgamesPage'
-import { GoalLine } from '../goal/GoalCard'
-import { drillStats } from '../../openings/drill'
-import { useOpeningDrills } from '../../storage/openingStore'
-import { OpeningLines } from '../openings/OpeningLines'
-import { OPENING_LINES, OPENINGS, OpeningTrainer } from '../openings/OpeningTrainer'
+import { PUZZLES } from '../train/trainRoutes'
 import { BulbIcon, CheckIcon, TargetIcon } from '../../ui/icons'
 import { GameBoard } from '../play/GameBoard'
 
-/** Mixed practice from your weakest themes, or one chosen theme. */
-const MIXED = 'mixed'
-
-
-export function PuzzlesScreen({ theme }: { theme?: string }) {
+/**
+ * Rated puzzles: a mix from your weak spots, or one chosen theme. `theme` is a puzzle theme,
+ * or anything else for the mix.
+ */
+export function PuzzlesPage({ theme }: { theme?: string }) {
   const [puzzles, setPuzzles] = useState<Puzzle[] | null>(null)
   const data = usePuzzleData()
   const games = useGames()
-  const mistakes = useMistakePuzzles()
-  const drills = useOpeningDrills()
-  const [now] = useState(() => Date.now())
-  const dueCount = mistakes ? todaysSet(mistakes, now).queue.length : 0
-  const openingStats = drills ? drillStats(drills, now) : null
-  const openingCount = openingStats ? openingStats.due + openingStats.fresh : 0
-  const mistakeMode = isMistakesRoute(theme)
-  const openingMode = theme === OPENINGS || theme === OPENING_LINES
-  const endgameMode = theme === ENDGAMES
   const recommended = useMemo(() => recommendedThemes(games ? progressStats(games) : null), [games])
   const estimate = useMemo(() => (games ? ratingSummary(games).estimate : null), [games])
   // Before your first puzzle, start from your estimated playing rating.
@@ -63,119 +45,26 @@ export function PuzzlesScreen({ theme }: { theme?: string }) {
     }
   }, [])
 
-  const selected = theme && THEME_LABEL[theme] ? theme : MIXED
+  const selected = theme && THEME_LABEL[theme] ? theme : PUZZLES
 
-  const modeSwitch = (
-    <div className="mode-switch four" role="tablist" aria-label="Training">
-      <a
-        role="tab"
-        aria-selected={mistakeMode}
-        className={mistakeMode ? 'active' : ''}
-        href={routeHref({ name: 'puzzles', theme: MISTAKES })}
-        data-testid="mode-mistakes"
-      >
-        Mistakes{dueCount > 0 && <span className="count-pill">{dueCount}</span>}
-      </a>
-      <a
-        role="tab"
-        aria-selected={!mistakeMode && !openingMode && !endgameMode}
-        className={!mistakeMode && !openingMode && !endgameMode ? 'active' : ''}
-        href={routeHref({ name: 'puzzles' })}
-      >
-        Puzzles
-      </a>
-      <a
-        role="tab"
-        aria-selected={openingMode}
-        className={openingMode ? 'active' : ''}
-        href={routeHref({ name: 'puzzles', theme: OPENINGS })}
-        data-testid="mode-openings"
-      >
-        Openings{openingCount > 0 && <span className="count-pill">{openingCount}</span>}
-      </a>
-      <a
-        role="tab"
-        aria-selected={endgameMode}
-        className={endgameMode ? 'active' : ''}
-        href={routeHref({ name: 'puzzles', theme: ENDGAMES })}
-        data-testid="mode-endgames"
-      >
-        Endgames
-      </a>
-    </div>
-  )
-
-  if (endgameMode) {
-    return (
-      <div className="puzzles-screen">
-        <div className="games-head">
-          <h1>Train</h1>
-        </div>
-        {modeSwitch}
-        <GoalLine />
-        <EndgamesPage />
-      </div>
-    )
-  }
-
-  if (openingMode) {
-    return (
-      <div className="puzzles-screen">
-        <div className="games-head">
-          <h1>Train</h1>
-        </div>
-        {modeSwitch}
-        <GoalLine />
-        {!drills ? (
-          <p className="muted">Loading…</p>
-        ) : theme === OPENING_LINES || drills.length === 0 ? (
-          <OpeningLines drills={drills} />
-        ) : (
-          <OpeningTrainer drills={drills} />
-        )}
-      </div>
-    )
-  }
-
-  if (mistakeMode) {
-    return (
-      <div className="puzzles-screen">
-        <div className="games-head">
-          <h1>Train</h1>
-        </div>
-        {modeSwitch}
-        <GoalLine />
-        {mistakes ? <MistakesPage puzzles={mistakes} theme={theme ?? MISTAKES} /> : <p className="muted">Loading…</p>}
-      </div>
-    )
-  }
-
-  if (!puzzles || !data) return <p className="muted page-message">Loading puzzles…</p>
+  if (!puzzles || !data) return <p className="muted">Loading puzzles…</p>
 
   return (
-    <div className="puzzles-screen">
-      <div className="games-head">
-        <h1>Train</h1>
-        <span className="puzzle-rating" data-testid="puzzle-rating">
-          <TargetIcon width={18} height={18} /> {rating}
-        </span>
-      </div>
-      {modeSwitch}
-      <GoalLine />
+    <>
       <div className="theme-chips theme-picker" role="tablist" aria-label="Theme">
-        <a className={`chip ${selected === MIXED ? 'active' : ''}`} href={routeHref({ name: 'puzzles' })}>
+        <a className={`chip ${selected === PUZZLES ? 'active' : ''}`} href={routeHref({ name: 'train', theme: PUZZLES })}>
           Your weak spots
         </a>
         {recommended.map((t) => (
-          <a key={t} className={`chip ${selected === t ? 'active' : ''}`} href={routeHref({ name: 'puzzles', theme: t })}>
+          <a key={t} className={`chip ${selected === t ? 'active' : ''}`} href={routeHref({ name: 'train', theme: t })}>
             {THEME_LABEL[t]}
           </a>
         ))}
         <select
           aria-label="More themes"
           className="chip theme-select"
-          value={recommended.includes(selected) || selected === MIXED ? '' : selected}
-          onChange={(e) => e.target.value && navigate({ name: 'puzzles', theme: e.target.value })}
+          value={recommended.includes(selected) || selected === PUZZLES ? '' : selected}
+          onChange={(e) => e.target.value && navigate({ name: 'train', theme: e.target.value })}
         >
           <option value="">More themes…</option>
           {Object.entries(THEME_LABEL)
@@ -190,11 +79,24 @@ export function PuzzlesScreen({ theme }: { theme?: string }) {
       <Trainer
         key={selected}
         puzzles={puzzles}
-        themes={selected === MIXED ? recommended : [selected]}
+        themes={selected === PUZZLES ? recommended : [selected]}
         rating={rating ?? data.rating}
         done={new Set(data.attempts.map((a) => a.puzzleId))}
       />
-    </div>
+    </>
+  )
+}
+
+/** The puzzle rating chip for the page header. */
+export function PuzzleRatingChip() {
+  const data = usePuzzleData()
+  const games = useGames()
+  const estimate = useMemo(() => (games ? ratingSummary(games).estimate : null), [games])
+  if (!data) return null
+  return (
+    <span className="puzzle-rating" data-testid="puzzle-rating" title="Your puzzle rating">
+      <TargetIcon width={18} height={18} /> {puzzleStartRating(data.rating, data.attempts.length, estimate)}
+    </span>
   )
 }
 

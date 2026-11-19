@@ -5,7 +5,7 @@ import { MOMENT_LABEL, momentRating } from './moments'
 import { practiceFromGame } from '../../practice/positions'
 import { requestPractice } from '../../practice/startRequest'
 import { routeHref } from '../../app/route'
-import { LESSON_PREFIX } from '../puzzles/mistakeRoutes'
+import { LESSON_PREFIX } from '../train/trainRoutes'
 import { PHASE_LABEL } from '../../review/gamePhase'
 import type { GameReview } from '../../review/types'
 import { opponentOf } from '../../storage/gameInfo'
@@ -161,7 +161,7 @@ export function ReviewSummary({ game, review, moments, onStart, onJump }: Props)
                         {moveName(review, ply)}
                       </button>
                     ))}
-                    <a className="chip lesson-link" href={routeHref({ name: 'puzzles', theme: LESSON_PREFIX + l.category })}>
+                    <a className="chip lesson-link" href={routeHref({ name: 'train', theme: LESSON_PREFIX + l.category })}>
                       Read the lesson
                     </a>
                   </div>

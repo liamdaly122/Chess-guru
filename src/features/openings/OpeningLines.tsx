@@ -1,6 +1,6 @@
 import type { Color } from 'chess.js'
 import { useEffect, useMemo, useState } from 'react'
-import { navigate, routeHref } from '../../app/route'
+import { navigate } from '../../app/route'
 import { OPENING_TRAINER } from '../../config/openingTrainer'
 import { loadBook, type BookData } from '../../openings/book'
 import { drillId, isMastered, newDrill, type OpeningDrill } from '../../openings/drill'
@@ -10,7 +10,7 @@ import { addDrills, deleteDrill } from '../../storage/openingStore'
 import { useGames } from '../../storage/useGames'
 import { whenText } from '../../training/srs'
 import { CloseIcon } from '../../ui/icons'
-import { OPENING_LINES, OPENINGS } from './OpeningTrainer'
+import { OPENING_LINES } from '../train/trainRoutes'
 
 const SIDE = { w: 'White', b: 'Black' } as const
 
@@ -46,7 +46,7 @@ export function OpeningLines({ drills }: { drills: OpeningDrill[] }) {
 
   const add = (line: OpeningLine, side: Color) => {
     // The first line: stay on this list (the Openings page would otherwise switch to practice).
-    if (drills.length === 0) navigate({ name: 'puzzles', theme: OPENING_LINES }, { keepScroll: true })
+    if (drills.length === 0) navigate({ name: 'train', theme: OPENING_LINES }, { keepScroll: true })
     void addDrills([newDrill(line, side)])
   }
 
@@ -54,11 +54,7 @@ export function OpeningLines({ drills }: { drills: OpeningDrill[] }) {
 
   return (
     <div className="opening-lines">
-      {drills.length > 0 ? (
-        <a className="back-link small" href={routeHref({ name: 'puzzles', theme: OPENINGS })}>
-          ← Back to practice
-        </a>
-      ) : (
+      {drills.length === 0 && (
         <p className="muted intro">
           Pick the openings you want to know by heart. You play your side, the app plays the other, and each line comes back
           until you know it.

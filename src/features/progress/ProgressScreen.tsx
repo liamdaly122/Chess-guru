@@ -13,7 +13,7 @@ import { drillStats } from '../../openings/drill'
 import { useOpeningDrills } from '../../storage/openingStore'
 import { AccuracyChart } from './AccuracyChart'
 import { LESSONS } from '../../lessons/lessons'
-import { LESSON_PREFIX } from '../puzzles/mistakeRoutes'
+import { LESSON_PREFIX } from '../train/trainRoutes'
 import { GoalCard } from '../goal/GoalCard'
 import { queueReviews, useReviewQueue } from '../../review/reviewQueue'
 import { RATING } from '../../config/rating'
@@ -207,8 +207,8 @@ export function ProgressScreen() {
                   <span className="bar-value">{Math.round(p.winLost)}%</span>
                   <span className="bar-sub muted">
                     {p.count} time{p.count === 1 ? '' : 's'} ·{' '}
-                    <a href={routeHref({ name: 'puzzles', theme: LESSON_PREFIX + p.category })}>lesson</a> ·{' '}
-                    <a href={routeHref({ name: 'puzzles', theme: CATEGORY_THEMES[p.category][0] })}>
+                    <a href={routeHref({ name: 'train', theme: LESSON_PREFIX + p.category })}>lesson</a> ·{' '}
+                    <a href={routeHref({ name: 'train', theme: CATEGORY_THEMES[p.category][0] })}>
                       practise {THEME_LABEL[CATEGORY_THEMES[p.category][0]].toLowerCase()}
                     </a>
                   </span>
@@ -223,20 +223,20 @@ export function ProgressScreen() {
           {stats.patterns[0] && (
             <a
               className="mistakes-link"
-              href={routeHref({ name: 'puzzles', theme: LESSON_PREFIX + stats.patterns[0].category })}
+              href={routeHref({ name: 'train', theme: LESSON_PREFIX + stats.patterns[0].category })}
               data-testid="progress-lesson"
             >
               <strong>Lesson for your costliest mistake:</strong> {LESSONS[stats.patterns[0].category].title.toLowerCase()}
             </a>
           )}
           {mistakeInfo && (
-            <a className="mistakes-link" href={routeHref({ name: 'puzzles', theme: 'mistakes' })} data-testid="progress-mistakes">
+            <a className="mistakes-link" href={routeHref({ name: 'train', theme: 'mistakes' })} data-testid="progress-mistakes">
               <strong>Your most common mistake:</strong> {mistakeInfo.top.label.toLowerCase()} (
               {mistakeInfo.top.times || mistakeInfo.top.timesEver} times).{' '}
               {mistakeInfo.today > 0 ? `${mistakeInfo.today} to solve today.` : 'Done for today.'}
             </a>
           )}
-          <a className="mistakes-link" href={routeHref({ name: 'puzzles', theme: 'openings' })} data-testid="progress-openings">
+          <a className="mistakes-link" href={routeHref({ name: 'train', theme: 'openings' })} data-testid="progress-openings">
             <strong>Your openings:</strong>{' '}
             {openingInfo && openingInfo.total > 0
               ? `${openingInfo.due + openingInfo.fresh} to practise, ${openingInfo.mastered} mastered`
@@ -250,7 +250,7 @@ export function ProgressScreen() {
           )}
           <div className="theme-chips">
             {themes.map((t) => (
-              <a key={t} className="chip" href={routeHref({ name: 'puzzles', theme: t })}>
+              <a key={t} className="chip" href={routeHref({ name: 'train', theme: t })}>
                 {THEME_LABEL[t] ?? t}
               </a>
             ))}

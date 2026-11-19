@@ -14,29 +14,27 @@ import { CheckIcon } from '../../ui/icons'
 import { CoachBubble } from '../play/CoachBubble'
 import { GameBoard } from '../play/GameBoard'
 import { Trainer } from '../puzzles/PuzzlesScreen'
-import { LESSON_PREFIX, LESSONS_ROUTE, MISTAKE_PATTERN_PREFIX, MISTAKES } from '../puzzles/mistakeRoutes'
+import { LESSON_PREFIX, MISTAKE_PATTERN_PREFIX } from '../train/trainRoutes'
 
 export const LESSON_SET = 5
-const href = (theme: string) => routeHref({ name: 'puzzles', theme })
+const href = (theme: string) => routeHref({ name: 'train', theme })
 
 function progressText(r: LessonRecord | undefined): string {
   if (!r) return 'Not practised yet'
   return `Practised ${r.sets} ${r.sets === 1 ? 'time' : 'times'} · best ${r.best} of ${LESSON_SET}`
 }
 
-/** The lessons, your costliest kind of mistake first. `max` shows only the first few (a card on the Mistakes page). */
-export function LessonsList({ max }: { max?: number }) {
+/** The lessons, your costliest kind of mistake first. */
+export function LessonsList() {
   const games = useGames()
   const records = useLessonRecords()
   const order = useMemo(() => (games ? lessonsByNeed(games) : null), [games])
   const counts = useMemo(() => (games ? lessonCounts(games) : null), [games])
   if (!order || !counts || !records) return null
-  const shown = max ? order.slice(0, max) : order
   return (
     <section className="card" aria-label="Lessons" data-testid="lessons-card">
-      <h2 className="card-title">Lessons</h2>
       <ul className="line-list">
-        {shown.map((c) => (
+        {order.map((c) => (
           <li key={c} className="line-row" data-testid="lesson-row" data-category={c}>
             <div className="line-info">
               <p className="line-name">{LESSONS[c].title}</p>
@@ -57,11 +55,6 @@ export function LessonsList({ max }: { max?: number }) {
           </li>
         ))}
       </ul>
-      {max && order.length > max && (
-        <a className="small see-all" href={href(LESSONS_ROUTE)}>
-          All {order.length} lessons
-        </a>
-      )}
     </section>
   )
 }
@@ -69,9 +62,6 @@ export function LessonsList({ max }: { max?: number }) {
 export function LessonsPage() {
   return (
     <div className="mistakes-home">
-      <a className="back-link small" href={href(MISTAKES)}>
-        ← Your mistakes
-      </a>
       <p className="muted small practice-about">
         Short lessons on the kinds of mistake the coach finds in your games, your costliest first. Each ends with {LESSON_SET}{' '}
         puzzles to practise.
@@ -106,12 +96,6 @@ export function LessonPage({ category, mistakes }: { category: LessonCategory; m
     [mistakes, lesson.patterns],
   )
   const board = useMemo(() => (example ? new Chess(example.fen) : null), [example])
-  const back = (
-    <a className="back-link small" href={href(LESSONS_ROUTE)}>
-      ← Lessons
-    </a>
-  )
-
   if (mode === 'practise' && puzzles && data) {
     return (
       <div className="lesson-practice">
@@ -138,9 +122,7 @@ export function LessonPage({ category, mistakes }: { category: LessonCategory; m
 
   return (
     <div className="mistakes-home lesson" data-testid="lesson">
-      {back}
       <section className="card lesson-card">
-        <h1 className="lesson-title-h">{lesson.title}</h1>
         <p>{lesson.intro}</p>
         <h2 className="card-title">How to spot it</h2>
         <ul className="lesson-points">

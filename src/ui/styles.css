@@ -2853,36 +2853,8 @@ a.chip.active {
 
 /* ---------- Puzzle mode switch and mistake trainer ---------- */
 
-.mode-switch {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px;
-  padding: 4px;
-  margin-bottom: 12px;
-  border-radius: 999px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow);
-  max-width: 420px;
-}
 
-.mode-switch a {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 38px;
-  border-radius: 999px;
-  color: var(--muted);
-  font-weight: 700;
-  font-size: 0.9rem;
-  text-decoration: none;
-}
 
-.mode-switch a.active {
-  background: var(--accent);
-  color: var(--accent-text);
-}
 
 .count-pill {
   min-width: 20px;
@@ -3125,9 +3097,6 @@ a.chip.active {
    Opening trainer
    ============================================================ */
 
-.mode-switch.three {
-  grid-template-columns: repeat(3, 1fr);
-}
 
 .trainer-bar {
   display: flex;
@@ -3256,10 +3225,6 @@ a.chip.active {
 }
 
 @media (max-width: 700px) {
-  .mode-switch.three a {
-    font-size: 0.85rem;
-  }
-
   /* Search results: the name gets the full width, the side buttons go underneath. */
   .line-row:has(.side-buttons) {
     flex-wrap: wrap;
@@ -4115,11 +4080,6 @@ a.chip.active {
 
 /* ---------- Endgame drills ---------- */
 
-.mode-switch.four {
-  grid-template-columns: repeat(4, 1fr);
-  max-width: 560px;
-}
-
 .drill-row {
   border-top: 1px solid var(--border);
   padding-bottom: 8px;
@@ -4151,24 +4111,6 @@ a.chip.active {
   margin: 0;
 }
 
-@media (max-width: 700px) {
-  .mode-switch.four {
-    gap: 2px;
-    padding: 3px;
-  }
-
-  .mode-switch.four a {
-    font-size: 0.8rem;
-    gap: 3px;
-    padding: 0 2px;
-  }
-
-  .mode-switch.four .count-pill {
-    min-width: 16px;
-    padding: 1px 4px;
-    font-size: 0.66rem;
-  }
-}
 
 /* ---------- Lessons ---------- */
 
@@ -4183,10 +4125,6 @@ a.chip.active {
   line-height: 1.55;
 }
 
-.lesson-title-h {
-  margin: 0;
-  font-size: 1.35rem;
-}
 
 .lesson-card .card-title {
   margin: 8px 0 0;
@@ -4241,4 +4179,114 @@ a.chip.active {
   min-height: 40px;
   padding: 6px 14px;
   font-size: 0.9rem;
+}
+
+/* ---------- Train home and pages ---------- */
+
+.train-home {
+  display: grid;
+  gap: 14px;
+}
+
+@media (min-width: 900px) {
+  .train-home {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+  .train-home .plan-card {
+    grid-column: 1 / -1;
+  }
+}
+
+.train-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.train-row > a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+  color: inherit;
+  text-decoration: none;
+}
+
+.train-row:first-child > a {
+  border-top: none;
+}
+
+.train-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.train-row-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.train-row-title {
+  font-weight: 700;
+}
+
+.train-chevron {
+  flex: none;
+  color: var(--muted);
+}
+
+.plan-check {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 2px solid var(--border);
+  box-shadow: inset 0 0 0 1px var(--surface-3);
+  color: var(--accent-text);
+}
+
+.plan-row.done .plan-check {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: none;
+}
+
+.plan-row.done .train-row-title {
+  color: var(--muted);
+}
+
+.plan-card .button-link.wide {
+  margin-top: 10px;
+}
+
+.plan-done {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.train-back {
+  display: inline-block;
+  margin-bottom: 4px;
+}
+
+.session-progress {
+  margin: 0 0 8px;
 }
